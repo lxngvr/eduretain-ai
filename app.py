@@ -1,4 +1,5 @@
 # IMPORT LIBRARY & DEPENDENCIES
+import base64
 import os
 import joblib
 import numpy as np
@@ -8,7 +9,6 @@ import streamlit as st
 # TENTUKAN PATH LOGO SESUAI LOKASI FOLDER
 LOGO_PATH = os.path.join("image", "eduretain AI - logo.png")
 if not os.path.exists(LOGO_PATH):
-    # Cadangan jika berkas berada di direktori root atau format lain
     possible_paths = [
         "image/eduretain AI - logo.png",
         "image/logo.png",
@@ -16,6 +16,15 @@ if not os.path.exists(LOGO_PATH):
         "logo.png"
     ]
     LOGO_PATH = next((p for p in possible_paths if os.path.exists(p)), None)
+
+# FUNGSI ENKODING LOGO KE BASE64 (AGAR RESPONSIF & TIDAK DIPENGARUHI MEDIA QUERY)
+def get_image_base64(path):
+    if path and os.path.exists(path):
+        with open(path, "rb") as f:
+            return base64.b64encode(f.read()).decode()
+    return None
+
+LOGO_BASE64 = get_image_base64(LOGO_PATH)
 
 # KONFIGURASI TAMPILAN HALAMAN (FAVICON MENGGUNAKAN LOGO ASLI)
 st.set_page_config(
@@ -113,9 +122,9 @@ st.markdown("""
         background-color: #2563EB !important;
     }
 
-    /* 8. MEDIA QUERIES UNTUK TAMPILAN MOBILE & TABLET */
+    /* 8. MEDIA QUERIES RESPONSIF KHUSUS ELEMEN KONTEN UTAMA */
     @media (max-width: 768px) {
-        [data-testid="column"] {
+        section[data-testid="stMain"] [data-testid="column"] {
             width: 100% !important;
             flex: 1 1 100% !important;
             min-width: 100% !important;
@@ -282,32 +291,27 @@ def show_developer_modal():
 
 # PANEL SIDEBAR
 with st.sidebar:
-    # TAMPILAN HEADER LOGO & TEKS SEJAJAR (LEBIH BESAR & PROPORSIONAL)
-    col_logo, col_title = st.columns([1.1, 3], vertical_alignment="center")
-    
-    with col_logo:
-        if LOGO_PATH:
-            st.image(LOGO_PATH, width=500)
-        else:
-            st.markdown("<h2 style='margin:0;'>🎓</h2>", unsafe_allow_html=True)
-            
-    with col_title:
-        st.markdown("""
-        <div style="line-height: 1.15; padding-left: 2px; margin-top: -17px;">
-            <div style="font-size: 1.5rem; font-weight: 800; color: #FFFFFF; letter-spacing: -0.3px;">
+    # HEADER LOGO & IDENTITAS (FLEXBOX MURNI RESPONSIF DI SEMUA RESOLUSI)
+    if LOGO_BASE64:
+        logo_markup = f'<img src="data:image/png;base64,{LOGO_BASE64}" style="width: 52px; height: 52px; object-fit: contain; flex-shrink: 0; border-radius: 8px;">'
+    else:
+        logo_markup = '<span style="font-size: 2.2rem; flex-shrink: 0; line-height: 1;">🎓</span>'
+
+    st.markdown(f"""
+    <div style="display: flex; align-items: center; gap: 12px; padding: 2px 0 8px 0;">
+        {logo_markup}
+        <div style="display: flex; flex-direction: column; justify-content: center; line-height: 1.15;">
+            <div style="font-size: 1.25rem; font-weight: 800; color: #FFFFFF; letter-spacing: -0.3px;">
                 EduRetain <span style="color: #60A5FA;">AI</span>
             </div>
-            <div style="font-size: 0.875rem; color: #94A3B8; font-weight: 600;">
+            <div style="font-size: 0.78rem; color: #94A3B8; font-weight: 600; margin-top: 2px;">
                 Early Warning System
             </div>
         </div>
-        """, unsafe_allow_html=True)
-        
-
-    st.markdown("""
-    <hr style="margin-top: -10px; margin-bottom: 1rem; border: none; border-top: 1px solid rgba(255, 255, 255, 0.12);">
+    </div>
+    <hr style="margin-top: 6px; margin-bottom: 1rem; border: none; border-top: 1px solid rgba(255, 255, 255, 0.12);">
     """, unsafe_allow_html=True)
-    
+
     if st.button("Spesifikasi Model AI", icon=":material/memory:", use_container_width=True):
         show_model_modal()
         
@@ -315,7 +319,7 @@ with st.sidebar:
         show_developer_modal()
         
     st.markdown("""
-    <hr style="margin-top: 5px; margin-bottom: 1rem; border: none; border-top: 1px solid rgba(255, 255, 255, 0.12);">
+    <hr style="margin-top: 8px; margin-bottom: 1rem; border: none; border-top: 1px solid rgba(255, 255, 255, 0.12);">
     """, unsafe_allow_html=True)
     
     st.caption("Tugas Akademik Artificial Intelligence & Machine Learning")
@@ -382,7 +386,7 @@ if selected_tab == "Evaluasi Mahasiswa (Individual)":
             sem2_approved = st.number_input("SKS Lulus Sem 2", min_value=0, max_value=int(sem2_enrolled), value=min(5, int(sem2_enrolled)), key="sem2_approved")
             sem2_grade = st.number_input("Rata-rata Nilai Sem 2 (0 - 20)", min_value=0.0, max_value=20.0, value=13.0, step=0.1)
 
-    # Otomatisasi kalkulasi jumlah evaluasi
+    # Otomatisasi kalkulasi beban evaluasi
     calc_sem1_eval = int(sem1_enrolled) + (int(sem1_enrolled) - int(sem1_approved))
     calc_sem2_eval = int(sem2_enrolled) + (int(sem2_enrolled) - int(sem2_approved))
 
