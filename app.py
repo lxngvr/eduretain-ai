@@ -283,7 +283,7 @@ def show_developer_modal():
 # PANEL SIDEBAR
 with st.sidebar:
     # TAMPILAN HEADER LOGO & TEKS SEJAJAR (INLINE)
-    col_logo, col_title = st.columns([1, 3.2], vertical_alignment="center")
+    col_logo, col_title = st.columns([1.1, 3], vertical_alignment="center")
     
     with col_logo:
         if LOGO_PATH:
