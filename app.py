@@ -17,7 +17,7 @@ if not os.path.exists(LOGO_PATH):
     ]
     LOGO_PATH = next((p for p in possible_paths if os.path.exists(p)), None)
 
-# FUNGSI ENKODING LOGO KE BASE64 (AGAR RESPONSIF & TIDAK DIPENGARUHI MEDIA QUERY)
+# FUNGSI ENKODING LOGO KE BASE64 (RESPONSIF DI SEMUA RESOLUSI)
 def get_image_base64(path):
     if path and os.path.exists(path):
         with open(path, "rb") as f:
@@ -34,7 +34,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# INJEKSI CSS GLOBAL STREAMLIT (TEMA BIRU, FONT NUNITO, DAN RESPONSIVE RULES)
+# INJEKSI CSS GLOBAL STREAMLIT
 st.markdown("""
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <style>
@@ -64,7 +64,7 @@ st.markdown("""
         font-weight: 900 !important;
     }
 
-    /* 3. TOMBOL UTAMA (PRIMARY BUTTON) */
+    /* 3. TOMBOL UTAMA */
     button[kind="primary"] {
         background-color: #2563EB !important;
         border-color: #2563EB !important;
@@ -78,7 +78,7 @@ st.markdown("""
         box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.3) !important;
     }
 
-    /* 4. TOMBOL SEKUNDER (SECONDARY BUTTON) */
+    /* 4. TOMBOL SEKUNDER */
     button[kind="secondary"]:hover {
         border-color: #2563EB !important;
         color: #2563EB !important;
@@ -122,7 +122,7 @@ st.markdown("""
         background-color: #2563EB !important;
     }
 
-    /* 8. MEDIA QUERIES RESPONSIF KHUSUS ELEMEN KONTEN UTAMA */
+    /* 8. MEDIA QUERIES RESPONSIF KHUSUS KONTEN UTAMA */
     @media (max-width: 768px) {
         section[data-testid="stMain"] [data-testid="column"] {
             width: 100% !important;
@@ -289,9 +289,19 @@ def show_developer_modal():
     """)
     st.info("Sistem mendukung pemrosesan data individu maupun berkas massal (.csv) secara terpadu.")
 
+# MODAL POP-UP 3: VALIDASI INPUT IDENTITAS
+@st.dialog("Perhatian: Data Belum Lengkap")
+def show_validation_modal():
+    st.markdown("""
+    <h4><i class="fa-solid fa-circle-exclamation" style="color:#DC2626;"></i> Nama Mahasiswa Wajib Diisi</h4>
+    """, unsafe_allow_html=True)
+    st.write("Silakan masukkan **Nama Lengkap Mahasiswa** sebelum menjalankan analisis risiko dan simulasi intervensi.")
+    if st.button("Mengerti & Lengkapi Data", type="primary", use_container_width=True):
+        st.rerun()
+
 # PANEL SIDEBAR
 with st.sidebar:
-    # HEADER LOGO & IDENTITAS (FLEXBOX MURNI RESPONSIF DI SEMUA RESOLUSI)
+    # HEADER LOGO & IDENTITAS
     if LOGO_BASE64:
         logo_markup = f'<img src="data:image/png;base64,{LOGO_BASE64}" style="width: 52px; height: 52px; object-fit: contain; flex-shrink: 0; border-radius: 8px;">'
     else:
@@ -355,14 +365,8 @@ if selected_tab == "Evaluasi Mahasiswa (Individual)":
         "Nama Lengkap Mahasiswa",
         value=st.session_state.get('student_name', ''),
         placeholder="Contoh: Budi Santoso",
-        help="Nama wajib diisi untuk membuka tombol analisis dan personalisasi rekomendasi."
+        help="Nama wajib diisi untuk membuka personalisasi evaluasi."
     )
-
-    # Validasi apakah nama sudah diisi atau belum
-    is_name_empty = not bool(input_name.strip())
-
-    if is_name_empty:
-        st.caption(":information_source: *Silakan masukkan nama mahasiswa terlebih dahulu untuk mengaktifkan tombol analisis.*")
 
     st.write("")
 
@@ -392,42 +396,39 @@ if selected_tab == "Evaluasi Mahasiswa (Individual)":
             sem2_approved = st.number_input("SKS Lulus Sem 2", min_value=0, max_value=int(sem2_enrolled), value=min(5, int(sem2_enrolled)), key="sem2_approved")
             sem2_grade = st.number_input("Rata-rata Nilai Sem 2 (0 - 20)", min_value=0.0, max_value=20.0, value=13.0, step=0.1)
 
-    # Otomatisasi kalkulasi beban evaluasi
     calc_sem1_eval = int(sem1_enrolled) + (int(sem1_enrolled) - int(sem1_approved))
     calc_sem2_eval = int(sem2_enrolled) + (int(sem2_enrolled) - int(sem2_approved))
 
     st.write("")
 
-    # Tombol dinonaktifkan jika is_name_empty bernilai True
-    if st.button(
-        "Jalankan Analisis Risiko",
-        type="primary",
-        use_container_width=True,
-        disabled=is_name_empty
-    ):
-        current_data = {
-            'Admission_grade': float(admission_grade),
-            'Age_at_enrollment': int(age),
-            'Curricular_units_1st_sem_enrolled': int(sem1_enrolled),
-            'Curricular_units_1st_sem_evaluations': int(calc_sem1_eval),
-            'Curricular_units_1st_sem_approved': int(sem1_approved),
-            'Curricular_units_1st_sem_grade': float(sem1_grade),
-            'Curricular_units_2nd_sem_enrolled': int(sem2_enrolled),
-            'Curricular_units_2nd_sem_evaluations': int(calc_sem2_eval),
-            'Curricular_units_2nd_sem_approved': int(sem2_approved),
-            'Curricular_units_2nd_sem_grade': float(sem2_grade),
-            'Tuition_fees_up_to_date': int(tuition),
-            'Scholarship_holder': int(scholarship),
-            'Debtor': int(debtor),
-            'Gender': int(gender)
-        }
+    if st.button("Jalankan Analisis Risiko", type="primary", use_container_width=True):
+        if not input_name.strip():
+            show_validation_modal()
+        else:
+            current_data = {
+                'Admission_grade': float(admission_grade),
+                'Age_at_enrollment': int(age),
+                'Curricular_units_1st_sem_enrolled': int(sem1_enrolled),
+                'Curricular_units_1st_sem_evaluations': int(calc_sem1_eval),
+                'Curricular_units_1st_sem_approved': int(sem1_approved),
+                'Curricular_units_1st_sem_grade': float(sem1_grade),
+                'Curricular_units_2nd_sem_enrolled': int(sem2_enrolled),
+                'Curricular_units_2nd_sem_evaluations': int(calc_sem2_eval),
+                'Curricular_units_2nd_sem_approved': int(sem2_approved),
+                'Curricular_units_2nd_sem_grade': float(sem2_grade),
+                'Tuition_fees_up_to_date': int(tuition),
+                'Scholarship_holder': int(scholarship),
+                'Debtor': int(debtor),
+                'Gender': int(gender)
+            }
 
-        status_result, proba = run_pipeline(current_data)
-        st.session_state['student_name'] = input_name.strip()
-        st.session_state['has_predicted'] = True
-        st.session_state['current_data'] = current_data
-        st.session_state['status_result'] = status_result
-        st.session_state['proba'] = proba
+            status_result, proba = run_pipeline(current_data)
+            st.session_state['student_name'] = input_name.strip()
+            st.session_state['has_predicted'] = True
+            st.session_state['current_data'] = current_data
+            st.session_state['status_result'] = status_result
+            st.session_state['proba'] = proba
+            st.rerun()
 
     if st.session_state.get('has_predicted', False):
         display_name = st.session_state.get('student_name', 'Mahasiswa')
