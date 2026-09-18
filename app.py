@@ -314,7 +314,10 @@ with st.sidebar:
     if st.button("Tentang Pengembang", icon=":material/badge:", use_container_width=True):
         show_developer_modal()
         
-    st.divider()
+    st.markdown("""
+    <hr style="margin-top: -10px; margin-bottom: 1rem; border: none; border-top: 1px solid rgba(255, 255, 255, 0.12);">
+    """, unsafe_allow_html=True)
+    
     st.caption("Tugas Akademik Artificial Intelligence & Machine Learning")
     st.caption("© 2026 Galang Dava Ramadhan. All rights reserved.")
 
