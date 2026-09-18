@@ -289,13 +289,13 @@ def show_developer_modal():
     """)
     st.info("Sistem mendukung pemrosesan data individu maupun berkas massal (.csv) secara terpadu.")
 
-# MODAL POP-UP 3: VALIDASI INPUT (BAHASA INDONESIA LENGKAP)
+# MODAL POP-UP 3: VALIDASI INPUT IDENTITAS & BATAS DATA
 @st.dialog("Perhatian: Data Tidak Sesuai")
 def show_validation_modal(errors):
     st.markdown("""
     <h4><i class="fa-solid fa-triangle-exclamation" style="color:#DC2626;"></i> Mohon Periksa Kembali Isian Anda</h4>
     """, unsafe_allow_html=True)
-    st.write("Sistem mendeteksi beberapa input yang belum lengkap atau di luar batasan data acuan:")
+    st.write("Sistem mendeteksi beberapa data yang belum lengkap atau di luar batasan data acuan:")
     
     for err in errors:
         st.markdown(f"- {err}")
@@ -369,7 +369,7 @@ if selected_tab == "Evaluasi Mahasiswa (Individual)":
     input_name = st.text_input(
         "Nama Lengkap Mahasiswa",
         value=st.session_state.get('student_name', ''),
-        placeholder="Contoh: Nanang Keseimbangan",
+        placeholder="Contoh: Budi Santoso",
         help="Nama wajib diisi untuk personalisasi lembar rekomendasi."
     )
 
@@ -384,22 +384,82 @@ if selected_tab == "Evaluasi Mahasiswa (Individual)":
             debtor = st.selectbox("Memiliki Tunggakan Utang?", options=[0, 1], index=0, format_func=lambda x: "Tidak Ada" if x == 0 else "Ya (Ada Tunggakan)")
             scholarship = st.selectbox("Penerima Beasiswa?", options=[0, 1], index=0, format_func=lambda x: "Bukan Penerima" if x == 0 else "Ya (Penerima)")
             gender = st.selectbox("Jenis Kelamin", options=[1, 0], format_func=lambda x: "Laki-laki" if x == 1 else "Perempuan")
-            age = st.number_input("Usia Saat Masuk (Tahun)", value=20, step=1, help="Rentang data acuan: 17 sampai 70 tahun.")
+            age = st.number_input(
+                "Usia Saat Masuk (Tahun)",
+                min_value=17,
+                max_value=70,
+                value=20,
+                step=1,
+                help="Batas usia di data: 17 sampai 70 tahun. Tombol minus (-) otomatis dinonaktifkan pada angka 17."
+            )
 
     with col2:
         with st.container(border=True):
             st.markdown("##### <i class='fa-solid fa-book' style='color:#2563EB;'></i> Evaluasi Semester 1", unsafe_allow_html=True)
-            admission_grade = st.number_input("Nilai Ujian Masuk (0 - 200)", value=126.0, step=0.5, help="Rentang nilai seleksi masuk: 0 sampai 200.")
-            sem1_enrolled = st.number_input("SKS Diambil Sem 1", value=6, step=1, key="sem1_enrolled", help="Rentang SKS yang diambil: 0 sampai 26 SKS.")
-            sem1_approved = st.number_input("SKS Lulus Sem 1", value=5, step=1, key="sem1_approved", help="SKS lulus tidak boleh melebihi SKS yang diambil.")
-            sem1_grade = st.number_input("Rata-rata Nilai Sem 1 (0 - 20)", value=12.3, step=0.1, help="Rentang nilai semester: 0 sampai 20.")
+            admission_grade = st.number_input(
+                "Nilai Ujian Masuk (0 - 200)",
+                min_value=0.0,
+                max_value=200.0,
+                value=126.0,
+                step=0.5,
+                help="Skala nilai seleksi masuk: 0 sampai 200."
+            )
+            sem1_enrolled = st.number_input(
+                "SKS Diambil Sem 1",
+                min_value=0,
+                max_value=26,
+                value=6,
+                step=1,
+                key="sem1_enrolled",
+                help="Batas pengambilan: 0 sampai 26 SKS."
+            )
+            sem1_approved = st.number_input(
+                "SKS Lulus Sem 1",
+                min_value=0,
+                max_value=int(sem1_enrolled),
+                value=min(5, int(sem1_enrolled)),
+                step=1,
+                key="sem1_approved",
+                help="Otomatis terkunci agar tidak melebihi SKS yang diambil."
+            )
+            sem1_grade = st.number_input(
+                "Rata-rata Nilai Sem 1 (0 - 20)",
+                min_value=0.0,
+                max_value=20.0,
+                value=12.3,
+                step=0.1,
+                help="Skala akademik: 0 sampai 20."
+            )
 
     with col3:
         with st.container(border=True):
             st.markdown("##### <i class='fa-solid fa-book-open' style='color:#2563EB;'></i> Evaluasi Semester 2", unsafe_allow_html=True)
-            sem2_enrolled = st.number_input("SKS Diambil Sem 2", value=6, step=1, key="sem2_enrolled", help="Rentang SKS yang diambil: 0 sampai 26 SKS.")
-            sem2_approved = st.number_input("SKS Lulus Sem 2", value=5, step=1, key="sem2_approved", help="SKS lulus tidak boleh melebihi SKS yang diambil.")
-            sem2_grade = st.number_input("Rata-rata Nilai Sem 2 (0 - 20)", value=12.2, step=0.1, help="Rentang nilai semester: 0 sampai 20.")
+            sem2_enrolled = st.number_input(
+                "SKS Diambil Sem 2",
+                min_value=0,
+                max_value=26,
+                value=6,
+                step=1,
+                key="sem2_enrolled",
+                help="Batas pengambilan: 0 sampai 26 SKS."
+            )
+            sem2_approved = st.number_input(
+                "SKS Lulus Sem 2",
+                min_value=0,
+                max_value=int(sem2_enrolled),
+                value=min(5, int(sem2_enrolled)),
+                step=1,
+                key="sem2_approved",
+                help="Otomatis terkunci agar tidak melebihi SKS yang diambil."
+            )
+            sem2_grade = st.number_input(
+                "Rata-rata Nilai Sem 2 (0 - 20)",
+                min_value=0.0,
+                max_value=20.0,
+                value=12.2,
+                step=0.1,
+                help="Skala akademik: 0 sampai 20."
+            )
 
     # Otomatisasi kalkulasi beban evaluasi
     calc_sem1_eval = int(sem1_enrolled) + max(0, (int(sem1_enrolled) - int(sem1_approved)))
@@ -408,43 +468,37 @@ if selected_tab == "Evaluasi Mahasiswa (Individual)":
     st.write("")
 
     if st.button("Jalankan Analisis Risiko", type="primary", use_container_width=True):
-        # 1. KUMPULKAN SELURUH VALIDASI INPUT (BAHASA INDONESIA)
+        # KUMPULKAN DAFTAR VALIDASI INPUT
         validation_errors = []
 
         if not input_name.strip():
-            validation_errors.append("Kolom **Nama Lengkap Mahasiswa** wajib diisi.")
+            validation_errors.append("Kolom **Nama Lengkap Mahasiswa** belum diisi.")
 
-        if age < 17 or age > 70:
-            validation_errors.append(f"**Usia Saat Masuk** ({age} tahun) di luar batas acuan. Harap masukkan antara **17 hingga 70 tahun**.")
+        if age is None or age < 17 or age > 70:
+            validation_errors.append(f"**Usia Saat Masuk** ({age} tahun) di luar batas acuan. Harap masukkan nilai antara **17 hingga 70 tahun**.")
 
-        if admission_grade < 0.0 or admission_grade > 200.0:
+        if admission_grade is None or admission_grade < 0.0 or admission_grade > 200.0:
             validation_errors.append(f"**Nilai Ujian Masuk** ({admission_grade}) di luar skala. Harap masukkan nilai antara **0 hingga 200**.")
 
-        # Validasi Semester 1
-        if sem1_enrolled < 0 or sem1_enrolled > 26:
-            validation_errors.append(f"**SKS Diambil Sem 1** ({sem1_enrolled}) di luar batas acuan. Harap masukkan antara **0 hingga 26 SKS**.")
+        if sem1_enrolled is None or sem1_enrolled < 0 or sem1_enrolled > 26:
+            validation_errors.append(f"**SKS Diambil Sem 1** ({sem1_enrolled}) di luar batas acuan (maksimum 26 SKS).")
 
-        if sem1_approved < 0 or sem1_approved > 26:
-            validation_errors.append(f"**SKS Lulus Sem 1** ({sem1_approved}) di luar batas acuan. Harap masukkan antara **0 hingga 26 SKS**.")
-        elif sem1_approved > sem1_enrolled:
-            validation_errors.append(f"**SKS Lulus Sem 1** ({sem1_approved} SKS) tidak boleh melebihi **SKS yang Diambil** ({sem1_enrolled} SKS).")
+        if sem1_approved is None or sem1_approved < 0 or sem1_approved > sem1_enrolled:
+            validation_errors.append(f"**SKS Lulus Sem 1** ({sem1_approved} SKS) tidak boleh melebihi SKS yang diambil ({sem1_enrolled} SKS).")
 
-        if sem1_grade < 0.0 or sem1_grade > 20.0:
-            validation_errors.append(f"**Rata-rata Nilai Sem 1** ({sem1_grade}) di luar skala. Harap masukkan nilai antara **0 hingga 20**.")
+        if sem1_grade is None or sem1_grade < 0.0 or sem1_grade > 20.0:
+            validation_errors.append(f"**Rata-rata Nilai Sem 1** ({sem1_grade}) di luar skala (0 hingga 20).")
 
-        # Validasi Semester 2
-        if sem2_enrolled < 0 or sem2_enrolled > 26:
-            validation_errors.append(f"**SKS Diambil Sem 2** ({sem2_enrolled}) di luar batas acuan. Harap masukkan antara **0 hingga 26 SKS**.")
+        if sem2_enrolled is None or sem2_enrolled < 0 or sem2_enrolled > 26:
+            validation_errors.append(f"**SKS Diambil Sem 2** ({sem2_enrolled}) di luar batas acuan (maksimum 26 SKS).")
 
-        if sem2_approved < 0 or sem2_approved > 26:
-            validation_errors.append(f"**SKS Lulus Sem 2** ({sem2_approved}) di luar batas acuan. Harap masukkan antara **0 hingga 26 SKS**.")
-        elif sem2_approved > sem2_enrolled:
-            validation_errors.append(f"**SKS Lulus Sem 2** ({sem2_approved} SKS) tidak boleh melebihi **SKS yang Diambil** ({sem2_enrolled} SKS).")
+        if sem2_approved is None or sem2_approved < 0 or sem2_approved > sem2_enrolled:
+            validation_errors.append(f"**SKS Lulus Sem 2** ({sem2_approved} SKS) tidak boleh melebihi SKS yang diambil ({sem2_enrolled} SKS).")
 
-        if sem2_grade < 0.0 or sem2_grade > 20.0:
-            validation_errors.append(f"**Rata-rata Nilai Sem 2** ({sem2_grade}) di luar skala. Harap masukkan nilai antara **0 hingga 20**.")
+        if sem2_grade is None or sem2_grade < 0.0 or sem2_grade > 20.0:
+            validation_errors.append(f"**Rata-rata Nilai Sem 2** ({sem2_grade}) di luar skala (0 hingga 20).")
 
-        # 2. EKSEKUSI / TAMPILKAN MODAL PERINGATAN
+        # JIKA ADA KESALAHAN, PICU MODAL POP-UP
         if validation_errors:
             show_validation_modal(validation_errors)
         else:
