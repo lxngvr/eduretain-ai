@@ -135,8 +135,22 @@ st.markdown("""
         line-height: 1.3;
     }
 
-    /* 9. UBAH TOMBOL (+) FILE UPLOADER MENJADI TOMBOL 'UBAH BERKAS' DENGAN IKON CSS */
-    [data-testid="stFileUploaderDropzone"] button {
+    /* 9. HANYA UBAH TOMBOL TAMBAH (+) MENJADI SATU TOMBOL 'UBAH BERKAS' */
+    /* Kembalikan tombol silang (x) agar tetap normal dan bersih */
+    [data-testid="stFileUploaderFile"] button {
+        font-size: 1rem !important;
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+    }
+    [data-testid="stFileUploaderFile"] button::before,
+    [data-testid="stFileUploaderFile"] button::after {
+        content: none !important;
+    }
+
+    /* Target hanya tombol (+) di sebelah berkas */
+    [data-testid="stFileUploaderDropzone"] > div > button,
+    [data-testid="stFileUploaderDropzone"] button:not([data-testid*="stFileUploaderFile"] button) {
         font-size: 0 !important;
         display: inline-flex !important;
         align-items: center !important;
@@ -150,13 +164,13 @@ st.markdown("""
         transition: all 0.2s ease-in-out !important;
     }
 
-    [data-testid="stFileUploaderDropzone"] button:hover {
+    [data-testid="stFileUploaderDropzone"] > div > button:hover {
         background-color: rgba(37, 99, 235, 0.25) !important;
         border-color: #2563EB !important;
     }
 
-    [data-testid="stFileUploaderDropzone"] button::before {
-        content: "\\f2f1" !important;
+    [data-testid="stFileUploaderDropzone"] > div > button::before {
+        content: "\f2f1" !important;
         font-family: "Font Awesome 6 Free" !important;
         font-weight: 900 !important;
         font-size: 0.8rem !important;
@@ -164,7 +178,7 @@ st.markdown("""
         visibility: visible !important;
     }
 
-    [data-testid="stFileUploaderDropzone"] button::after {
+    [data-testid="stFileUploaderDropzone"] > div > button::after {
         content: "Ubah Berkas" !important;
         font-size: 0.8rem !important;
         font-weight: 700 !important;
