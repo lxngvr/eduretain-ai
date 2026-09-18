@@ -122,7 +122,20 @@ st.markdown("""
         background-color: #2563EB !important;
     }
 
-    /* 8. MEDIA QUERIES RESPONSIF KHUSUS KONTEN UTAMA */
+    /* 8. TERJEMAHKAN TOOLTIP ERROR BAWAAN STREAMLIT KE BAHASA INDONESIA */
+    div[data-baseweb="popover"] div[role="tooltip"] {
+        font-size: 0 !important;
+    }
+    div[data-baseweb="popover"] div[role="tooltip"]::before {
+        content: "Peringatan: Angka di luar batas acuan data. Silakan masukkan nilai yang valid." !important;
+        font-size: 0.82rem !important;
+        font-family: 'Nunito', sans-serif !important;
+        color: #FFFFFF !important;
+        display: block;
+        line-height: 1.3;
+    }
+
+    /* 9. MEDIA QUERIES RESPONSIF KHUSUS KONTEN UTAMA */
     @media (max-width: 768px) {
         section[data-testid="stMain"] [data-testid="column"] {
             width: 100% !important;
@@ -135,19 +148,6 @@ st.markdown("""
             max-width: 95vw !important;
             padding: 1rem !important;
         }
-    }
-    
-    /* TERJEMAHKAN TOOLTIP ERROR BAWAAN STREAMLIT KE BAHASA INDONESIA */
-    div[data-baseweb="popover"] div[role="tooltip"] {
-        font-size: 0 !important; /* Sembunyikan teks bawaan bahasa Inggris */
-    }
-    div[data-baseweb="popover"] div[role="tooltip"]::before {
-        content: "Peringatan: Angka di luar batas acuan data. Silakan masukkan nilai yang sesuai." !important;
-        font-size: 0.82rem !important;
-        font-family: 'Nunito', sans-serif !important;
-        color: #FFFFFF !important;
-        display: block;
-        line-height: 1.3;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -254,6 +254,10 @@ def run_pipeline(custom_input):
     label = decode_label(pred)
     return label, prob
 
+# FUNGSI RESET HASIL PREDIKSI KETIKA ADA INPUT YANG DIUBAH
+def reset_prediction():
+    st.session_state['has_predicted'] = False
+
 # MODAL POP-UP 1: PROFIL MODEL
 @st.dialog("Spesifikasi Teknis Model AI")
 def show_model_modal():
@@ -303,7 +307,7 @@ def show_developer_modal():
     st.info("Sistem mendukung pemrosesan data individu maupun berkas massal (.csv) secara terpadu.")
 
 # MODAL POP-UP 3: VALIDASI INPUT IDENTITAS & BATAS DATA
-@st.dialog("Perhatian: Data Tidak Sesuai")
+@st.dialog("Perhatian: Data Belum Sesuai")
 def show_validation_modal(errors):
     st.markdown("""
     <h4><i class="fa-solid fa-triangle-exclamation" style="color:#DC2626;"></i> Mohon Periksa Kembali Isian Anda</h4>
@@ -382,8 +386,10 @@ if selected_tab == "Evaluasi Mahasiswa (Individual)":
     input_name = st.text_input(
         "Nama Lengkap Mahasiswa",
         value=st.session_state.get('student_name', ''),
-        placeholder="Contoh: Budi Santoso",
-        help="Nama wajib diisi untuk personalisasi lembar rekomendasi."
+        placeholder="contoh : Aang Acumalaka",
+        help="Nama wajib diisi untuk personalisasi lembar rekomendasi.",
+        key="input_name_widget",
+        on_change=reset_prediction
     )
 
     st.write("")
@@ -393,17 +399,46 @@ if selected_tab == "Evaluasi Mahasiswa (Individual)":
     with col1:
         with st.container(border=True):
             st.markdown("##### <i class='fa-solid fa-wallet' style='color:#2563EB;'></i> Administrasi & Finansial", unsafe_allow_html=True)
-            tuition = st.selectbox("Status Pembayaran SPP", options=[1, 0], index=0, format_func=lambda x: "Lancar / Lunas" if x == 1 else "Menunggak")
-            debtor = st.selectbox("Memiliki Tunggakan Utang?", options=[0, 1], index=0, format_func=lambda x: "Tidak Ada" if x == 0 else "Ya (Ada Tunggakan)")
-            scholarship = st.selectbox("Penerima Beasiswa?", options=[0, 1], index=0, format_func=lambda x: "Bukan Penerima" if x == 0 else "Ya (Penerima)")
-            gender = st.selectbox("Jenis Kelamin", options=[1, 0], format_func=lambda x: "Laki-laki" if x == 1 else "Perempuan")
+            tuition = st.selectbox(
+                "Status Pembayaran SPP",
+                options=[1, 0],
+                index=0,
+                format_func=lambda x: "Lancar / Lunas" if x == 1 else "Menunggak",
+                key="widget_tuition",
+                on_change=reset_prediction
+            )
+            debtor = st.selectbox(
+                "Memiliki Tunggakan Utang?",
+                options=[0, 1],
+                index=0,
+                format_func=lambda x: "Tidak Ada" if x == 0 else "Ya (Ada Tunggakan)",
+                key="widget_debtor",
+                on_change=reset_prediction
+            )
+            scholarship = st.selectbox(
+                "Penerima Beasiswa?",
+                options=[0, 1],
+                index=0,
+                format_func=lambda x: "Bukan Penerima" if x == 0 else "Ya (Penerima)",
+                key="widget_scholarship",
+                on_change=reset_prediction
+            )
+            gender = st.selectbox(
+                "Jenis Kelamin",
+                options=[1, 0],
+                format_func=lambda x: "Laki-laki" if x == 1 else "Perempuan",
+                key="widget_gender",
+                on_change=reset_prediction
+            )
             age = st.number_input(
                 "Usia Saat Masuk (Tahun)",
                 min_value=17,
                 max_value=70,
                 value=20,
                 step=1,
-                help="Batas usia di data: 17 sampai 70 tahun. Tombol minus (-) otomatis dinonaktifkan pada angka 17."
+                help="Batas usia acuan: 17 sampai 70 tahun. Tombol minus (-) otomatis terkunci pada angka 17.",
+                key="widget_age",
+                on_change=reset_prediction
             )
 
     with col2:
@@ -415,7 +450,9 @@ if selected_tab == "Evaluasi Mahasiswa (Individual)":
                 max_value=200.0,
                 value=126.0,
                 step=0.5,
-                help="Skala nilai seleksi masuk: 0 sampai 200."
+                help="Skala nilai seleksi masuk: 0 sampai 200.",
+                key="widget_admission_grade",
+                on_change=reset_prediction
             )
             sem1_enrolled = st.number_input(
                 "SKS Diambil Sem 1",
@@ -423,8 +460,9 @@ if selected_tab == "Evaluasi Mahasiswa (Individual)":
                 max_value=26,
                 value=6,
                 step=1,
-                key="sem1_enrolled",
-                help="Batas pengambilan: 0 sampai 26 SKS."
+                key="widget_sem1_enrolled",
+                help="Batas pengambilan: 0 sampai 26 SKS.",
+                on_change=reset_prediction
             )
             sem1_approved = st.number_input(
                 "SKS Lulus Sem 1",
@@ -432,8 +470,9 @@ if selected_tab == "Evaluasi Mahasiswa (Individual)":
                 max_value=int(sem1_enrolled),
                 value=min(5, int(sem1_enrolled)),
                 step=1,
-                key="sem1_approved",
-                help="Otomatis terkunci agar tidak melebihi SKS yang diambil."
+                key="widget_sem1_approved",
+                help="Otomatis terkunci agar tidak melebihi SKS yang diambil.",
+                on_change=reset_prediction
             )
             sem1_grade = st.number_input(
                 "Rata-rata Nilai Sem 1 (0 - 20)",
@@ -441,7 +480,9 @@ if selected_tab == "Evaluasi Mahasiswa (Individual)":
                 max_value=20.0,
                 value=12.3,
                 step=0.1,
-                help="Skala akademik: 0 sampai 20."
+                help="Skala akademik: 0 sampai 20.",
+                key="widget_sem1_grade",
+                on_change=reset_prediction
             )
 
     with col3:
@@ -453,8 +494,9 @@ if selected_tab == "Evaluasi Mahasiswa (Individual)":
                 max_value=26,
                 value=6,
                 step=1,
-                key="sem2_enrolled",
-                help="Batas pengambilan: 0 sampai 26 SKS."
+                key="widget_sem2_enrolled",
+                help="Batas pengambilan: 0 sampai 26 SKS.",
+                on_change=reset_prediction
             )
             sem2_approved = st.number_input(
                 "SKS Lulus Sem 2",
@@ -462,8 +504,9 @@ if selected_tab == "Evaluasi Mahasiswa (Individual)":
                 max_value=int(sem2_enrolled),
                 value=min(5, int(sem2_enrolled)),
                 step=1,
-                key="sem2_approved",
-                help="Otomatis terkunci agar tidak melebihi SKS yang diambil."
+                key="widget_sem2_approved",
+                help="Otomatis terkunci agar tidak melebihi SKS yang diambil.",
+                on_change=reset_prediction
             )
             sem2_grade = st.number_input(
                 "Rata-rata Nilai Sem 2 (0 - 20)",
@@ -471,7 +514,9 @@ if selected_tab == "Evaluasi Mahasiswa (Individual)":
                 max_value=20.0,
                 value=12.2,
                 step=0.1,
-                help="Skala akademik: 0 sampai 20."
+                help="Skala akademik: 0 sampai 20.",
+                key="widget_sem2_grade",
+                on_change=reset_prediction
             )
 
     # Otomatisasi kalkulasi beban evaluasi
@@ -513,6 +558,7 @@ if selected_tab == "Evaluasi Mahasiswa (Individual)":
 
         # JIKA ADA KESALAHAN, PICU MODAL POP-UP
         if validation_errors:
+            st.session_state['has_predicted'] = False
             show_validation_modal(validation_errors)
         else:
             current_data = {
@@ -540,6 +586,7 @@ if selected_tab == "Evaluasi Mahasiswa (Individual)":
             st.session_state['proba'] = proba
             st.rerun()
 
+    # LEMBAR HASIL EVALUASI (HANYA MUNCUL JIKA SUDAH DIANALISIS DAN TIDAK DIRUBAH INPUTNYA)
     if st.session_state.get('has_predicted', False):
         display_name = st.session_state.get('student_name', 'Mahasiswa')
         current_data = st.session_state['current_data']
