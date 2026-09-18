@@ -26,7 +26,7 @@ def get_image_base64(path):
 
 LOGO_BASE64 = get_image_base64(LOGO_PATH)
 
-# KONFIGURASI TAMPILAN HALAMAN (FAVICON MENGGUNAKAN LOGO ASLI)
+# KONFIGURASI TAMPILAN HALAMAN
 st.set_page_config(
     page_title="EduRetain AI - Student Retention Early Warning System",
     page_icon=LOGO_PATH if LOGO_PATH else "🎓",
@@ -135,7 +135,45 @@ st.markdown("""
         line-height: 1.3;
     }
 
-    /* 9. MEDIA QUERIES RESPONSIF KHUSUS KONTEN UTAMA */
+    /* 9. UBAH TOMBOL (+) FILE UPLOADER MENJADI TOMBOL 'UBAH BERKAS' DENGAN IKON CSS */
+    [data-testid="stFileUploaderDropzone"] button {
+        font-size: 0 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 0.45rem !important;
+        padding: 0.35rem 0.75rem !important;
+        border-radius: 0.45rem !important;
+        background-color: rgba(37, 99, 235, 0.12) !important;
+        border: 1px solid rgba(37, 99, 235, 0.35) !important;
+        cursor: pointer !important;
+        transition: all 0.2s ease-in-out !important;
+    }
+
+    [data-testid="stFileUploaderDropzone"] button:hover {
+        background-color: rgba(37, 99, 235, 0.25) !important;
+        border-color: #2563EB !important;
+    }
+
+    [data-testid="stFileUploaderDropzone"] button::before {
+        content: "\\f2f1" !important;
+        font-family: "Font Awesome 6 Free" !important;
+        font-weight: 900 !important;
+        font-size: 0.8rem !important;
+        color: #60A5FA !important;
+        visibility: visible !important;
+    }
+
+    [data-testid="stFileUploaderDropzone"] button::after {
+        content: "Ubah Berkas" !important;
+        font-size: 0.8rem !important;
+        font-weight: 700 !important;
+        font-family: 'Nunito', sans-serif !important;
+        color: #60A5FA !important;
+        visibility: visible !important;
+    }
+
+    /* 10. MEDIA QUERIES RESPONSIF KHUSUS KONTEN UTAMA */
     @media (max-width: 768px) {
         section[data-testid="stMain"] [data-testid="column"] {
             width: 100% !important;
@@ -338,7 +376,6 @@ def show_batch_file_error_modal(error_messages):
 
 # PANEL SIDEBAR
 with st.sidebar:
-    # HEADER LOGO & IDENTITAS
     if LOGO_BASE64:
         logo_markup = f'<img src="data:image/png;base64,{LOGO_BASE64}" style="width: 52px; height: 52px; object-fit: contain; flex-shrink: 0; border-radius: 8px;">'
     else:
@@ -807,7 +844,6 @@ elif selected_tab == "Pemindaian Angkatan (Batch Screening)":
                         total_dropout = int((df_upload['Prediksi_Status'] == 'Dropout').sum())
                         pct_dropout = float((total_dropout / total_mhs) * 100) if total_mhs > 0 else 0.0
 
-                        # Penentuan warna tema rasio: Merah (Kritis > 50%), Kuning (Waspada 25-50%), Hijau (Aman < 25%)
                         if pct_dropout >= 50.0:
                             ratio_border_color = "#DC2626"
                             ratio_bg_color = "rgba(220, 38, 38, 0.08)"
@@ -911,7 +947,6 @@ elif selected_tab == "Pemindaian Angkatan (Batch Screening)":
                         
                         df_display = df_display.rename(columns=rename_dict)
 
-                        # Helper pewarnaan baris/sel tabel (Merah > 60%, Kuning 40-60%, Hijau < 40%)
                         def highlight_risk_cells(val):
                             if isinstance(val, (int, float)):
                                 if val >= 60.0:
@@ -960,13 +995,12 @@ elif selected_tab == "Pemindaian Angkatan (Batch Screening)":
                             mime="text/csv"
                         )
 
-                        # 4. ACTION PLAN REKOMENDASI UNTUK KAMPUS (MENGGUNAKAN KONDISI IF-ELSE: HANYA MUNCUL 1 SESUAI STATUS DATA)
+                        # 4. ACTION PLAN REKOMENDASI UNTUK KAMPUS (POSISI DI PALING BAWAH & HANYA MUNCUL 1 DENGAN IF-ELSE)
                         st.divider()
                         st.markdown("### <i class='fa-solid fa-bullhorn' style='color:#2563EB;'></i> Rekomendasi Rencana Aksi Kampus (Institutional Action Plan)", unsafe_allow_html=True)
                         st.caption("Sistem secara otomatis merumuskan 1 rencana aksi utama berdasarkan profil sebaran risiko angkatan:")
 
                         if pct_dropout >= 50.0:
-                            # KONDISI 1: SITUASI KRITIS (Merah)
                             st.markdown("""
                             <div style="padding: 1.25rem; border-radius: 0.75rem; border-left: 6px solid #DC2626; background: rgba(220, 38, 38, 0.08); border-top: 1px solid rgba(220,38,38,0.25); border-right: 1px solid rgba(220,38,38,0.25); border-bottom: 1px solid rgba(220,38,38,0.25);">
                                 <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 0.5rem;">
@@ -986,7 +1020,6 @@ elif selected_tab == "Pemindaian Angkatan (Batch Screening)":
                             """, unsafe_allow_html=True)
 
                         elif pct_dropout >= 25.0:
-                            # KONDISI 2: SITUASI WASPADA (Kuning/Amber)
                             st.markdown("""
                             <div style="padding: 1.25rem; border-radius: 0.75rem; border-left: 6px solid #F59E0B; background: rgba(245, 158, 11, 0.08); border-top: 1px solid rgba(245,158,11,0.25); border-right: 1px solid rgba(245,158,11,0.25); border-bottom: 1px solid rgba(245,158,11,0.25);">
                                 <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 0.5rem;">
@@ -1005,7 +1038,6 @@ elif selected_tab == "Pemindaian Angkatan (Batch Screening)":
                             """, unsafe_allow_html=True)
 
                         else:
-                            # KONDISI 3: SITUASI STABIL / AMAN (Hijau)
                             st.markdown("""
                             <div style="padding: 1.25rem; border-radius: 0.75rem; border-left: 6px solid #10B981; background: rgba(16, 185, 129, 0.08); border-top: 1px solid rgba(16,185,129,0.25); border-right: 1px solid rgba(16,185,129,0.25); border-bottom: 1px solid rgba(16,185,129,0.25);">
                                 <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 0.5rem;">
