@@ -354,7 +354,7 @@ if selected_tab == "Evaluasi Mahasiswa (Individual)":
     input_name = st.text_input(
         "Nama Lengkap Mahasiswa",
         value=st.session_state.get('student_name', ''),
-        placeholder="Contoh: Acuy Amalakacuy",
+        placeholder="Contoh: Budi Santoso",
         help="Nama wajib diisi untuk membuka tombol analisis dan personalisasi rekomendasi."
     )
 
@@ -367,38 +367,6 @@ if selected_tab == "Evaluasi Mahasiswa (Individual)":
     st.write("")
 
     col1, col2, col3 = st.columns(3)
-
-    with col1:
-        with st.container(border=True):
-            st.markdown("##### <i class='fa-solid fa-wallet' style='color:#2563EB;'></i> Administrasi & Finansial", unsafe_allow_html=True)
-            tuition = st.selectbox("Status Pembayaran SPP", options=[1, 0], index=0, format_func=lambda x: "Lancar / Lunas" if x == 1 else "Menunggak")
-            debtor = st.selectbox("Memiliki Tunggakan Utang?", options=[1, 0], index=1, format_func=lambda x: "Ya (Ada Tunggakan)" if x == 1 else "Tidak Ada")
-            scholarship = st.selectbox("Penerima Beasiswa?", options=[1, 0], index=1, format_func=lambda x: "Ya (Penerima)" if x == 1 else "Bukan Penerima")
-            gender = st.selectbox("Jenis Kelamin", options=[1, 0], format_func=lambda x: "Laki-laki" if x == 1 else "Perempuan")
-            age = st.number_input("Usia Saat Masuk (Tahun)", min_value=15, max_value=70, value=20)
-
-    with col2:
-        with st.container(border=True):
-            st.markdown("##### <i class='fa-solid fa-book' style='color:#2563EB;'></i> Evaluasi Semester 1", unsafe_allow_html=True)
-            admission_grade = st.number_input("Nilai Ujian Masuk (0 - 200)", min_value=0.0, max_value=200.0, value=125.0, step=0.5)
-            sem1_enrolled = st.number_input("SKS Diambil Sem 1", min_value=1, max_value=30, value=6, key="sem1_enrolled")
-            sem1_approved = st.number_input("SKS Lulus Sem 1", min_value=0, max_value=int(sem1_enrolled), value=min(5, int(sem1_enrolled)), key="sem1_approved")
-            sem1_grade = st.number_input("Rata-rata Nilai Sem 1 (0 - 20)", min_value=0.0, max_value=20.0, value=13.0, step=0.1)
-
-    with col3:
-        with st.container(border=True):
-            st.markdown("##### <i class='fa-solid fa-book-open' style='color:#2563EB;'></i> Evaluasi Semester 2", unsafe_allow_html=True)
-            sem2_enrolled = st.number_input("SKS Diambil Sem 2", min_value=1, max_value=30, value=6, key="sem2_enrolled")
-            sem2_approved = st.number_input("SKS Lulus Sem 2", min_value=0, max_value=int(sem2_enrolled), value=min(5, int(sem2_enrolled)), key="sem2_approved")
-            sem2_grade = st.number_input("Rata-rata Nilai Sem 2 (0 - 20)", min_value=0.0, max_value=20.0, value=13.0, step=0.1)
-
-    # Otomatisasi kalkulasi beban evaluasi
-    calc_sem1_eval = int(sem1_enrolled) + (int(sem1_enrolled) - int(sem1_approved))
-    calc_sem2_eval = int(sem2_enrolled) + (int(sem2_enrolled) - int(sem2_approved))
-
-    st.write("")
-
-    ifcol1, col2, col3 = st.columns(3)
 
     with col1:
         with st.container(border=True):
@@ -460,7 +428,13 @@ if selected_tab == "Evaluasi Mahasiswa (Individual)":
         st.session_state['current_data'] = current_data
         st.session_state['status_result'] = status_result
         st.session_state['proba'] = proba
-        
+
+    if st.session_state.get('has_predicted', False):
+        display_name = st.session_state.get('student_name', 'Mahasiswa')
+        current_data = st.session_state['current_data']
+        status_result = st.session_state['status_result']
+        proba = st.session_state['proba']
+
         st.divider()
         st.markdown(f"### <i class='fa-solid fa-chart-pie' style='color:#2563EB;'></i> Hasil Evaluasi: **{display_name}**", unsafe_allow_html=True)
         
