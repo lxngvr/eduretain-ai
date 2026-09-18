@@ -287,7 +287,7 @@ with st.sidebar:
     
     with col_logo:
         if LOGO_PATH:
-            st.image(LOGO_PATH, width=54)
+            st.image(LOGO_PATH, width=100)
         else:
             st.markdown("<h2 style='margin:0;'>🎓</h2>", unsafe_allow_html=True)
             
