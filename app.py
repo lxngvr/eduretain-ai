@@ -321,7 +321,7 @@ def show_validation_modal(errors):
     if st.button("Mengerti & Perbaiki Data", type="primary", use_container_width=True):
         st.rerun()
 
-# MODAL POP-UP 4: VALIDASI BERKAS BATCH SCREENING
+# MODAL POP-UP 4: VALIDASI BERKAS BATCH SCREENING (DENGAN RESET UPLOADER)
 @st.dialog("Peringatan: Berkas Tidak Sesuai")
 def show_batch_file_error_modal(error_messages):
     st.markdown("""
@@ -333,7 +333,6 @@ def show_batch_file_error_modal(error_messages):
     st.info("Pastikan berkas CSV memuat parameter akademik utama seperti kolom SKS, nilai semester, dan status pembayaran SPP.")
     
     if st.button("Tutup & Unggah Ulang Berkas", type="primary", use_container_width=True):
-        # Naikkan counter key agar file_uploader ter-reset bersih
         st.session_state["uploader_key"] = st.session_state.get("uploader_key", 0) + 1
         st.rerun()
 
@@ -818,37 +817,7 @@ elif selected_tab == "Pemindaian Angkatan (Batch Screening)":
                         k2.metric("Terindikasi Rawan Dropout", f"{total_dropout:,}".replace(",", "."))
                         k3.metric("Rasio Mahasiswa Kritis", f"{pct_dropout:.1f}%")
 
-                        # 3. ACTION PLAN REKOMENDASI UNTUK KAMPUS
-                        st.markdown("### <i class='fa-solid fa-bullhorn' style='color:#2563EB;'></i> Rekomendasi Rencana Aksi Kampus (Institutional Action Plan)", unsafe_allow_html=True)
-                        st.caption("Langkah strategis terpadu berdasarkan agregasi profil risiko angkatan mahasiswa:")
-                        
-                        act_c1, act_c2, act_c3 = st.columns(3)
-                        with act_c1:
-                            with st.container(border=True):
-                                st.markdown("##### <i class='fa-solid fa-circle-exclamation' style='color:#DC2626;'></i> Prioritas 1: Kritis (> 60%)", unsafe_allow_html=True)
-                                st.markdown("""
-                                * **Konseling Terpadu:** Agendakan pemanggilan langsung bersama Dosen Pembimbing Akademik (DPA).
-                                * **Audit Finansial:** Fasilitasi skema cicilan SPP atau beasiswa darurat untuk mahasiswa berstatus menunggak.
-                                * **Proteksi Registrasi:** Kunci opsi pengunduran diri sepihak sebelum sesi mediasi selesai.
-                                """)
-                        with act_c2:
-                            with st.container(border=True):
-                                st.markdown("##### <i class='fa-solid fa-triangle-exclamation' style='color:#F59E0B;'></i> Prioritas 2: Waspada (40% - 60%)", unsafe_allow_html=True)
-                                st.markdown("""
-                                * **Kelas Remedial & Asistensi:** Wajibkan keikutsertaan dalam kelompok belajar sebaya (*peer tutoring*).
-                                * **Restrukturisasi SKS:** Batasi pengambilan beban SKS di semester berikutnya maksimal 18–20 SKS.
-                                * **Monitoring Berkala:** Jadwalkan pelaporan kemajuan belajar bulanan ke prodi.
-                                """)
-                        with act_c3:
-                            with st.container(border=True):
-                                st.markdown("##### <i class='fa-solid fa-circle-check' style='color:#10B981;'></i> Prioritas 3: Stabil (< 40%)", unsafe_allow_html=True)
-                                st.markdown("""
-                                * **Akselerasi Prestasi:** Dorong keterlibatan dalam program MBKM, magang industri, dan riset dosen.
-                                * **Peluang Beasiswa Prestasi:** Rekomendasikan untuk skema pendanaan prestasi atau asisten laboratorium.
-                                * **Pemantauan Mandiri:** Evaluasi rutin mandiri melalui portal akademik kampus.
-                                """)
-
-                        # 4. DEKODE NILAI BINER & PENYESUAIAN NAMA KOLOM AGAR MUDAH DIPAHAMI USER
+                        # 3. DEKODE NILAI BINER & PENYESUAIAN NAMA KOLOM AGAR MUDAH DIPAHAMI USER
                         st.divider()
                         st.markdown("##### <i class='fa-solid fa-table-list' style='color:#2563EB;'></i> Hasil Pemindaian & Daftar Prioritas Penanganan", unsafe_allow_html=True)
                         
@@ -865,7 +834,7 @@ elif selected_tab == "Pemindaian Angkatan (Batch Screening)":
                         if 'Gender' in df_display.columns:
                             df_display['Gender'] = df_display['Gender'].map({1: 'Laki-laki', 0: 'Perempuan'}).fillna(df_display['Gender'])
 
-                        # Kamus penyesuaian nama kolom tanpa underscore
+                        # Kamus penyesuaian seluruh nama kolom agar ramah pengguna tanpa underscore
                         rename_dict = {
                             'NIM': 'NIM',
                             'Nama_Mahasiswa': 'Nama Mahasiswa',
@@ -879,9 +848,11 @@ elif selected_tab == "Pemindaian Angkatan (Batch Screening)":
                             'Debtor': 'Beban Utang',
                             'Scholarship_holder': 'Status Beasiswa',
                             'Curricular_units_1st_sem_enrolled': 'SKS Diambil Sem 1',
+                            'Curricular_units_1st_sem_evaluations': 'Evaluasi Ujian Sem 1',
                             'Curricular_units_1st_sem_approved': 'SKS Lulus Sem 1',
                             'Curricular_units_1st_sem_grade': 'Rata-rata Nilai Sem 1',
                             'Curricular_units_2nd_sem_enrolled': 'SKS Diambil Sem 2',
+                            'Curricular_units_2nd_sem_evaluations': 'Evaluasi Ujian Sem 2',
                             'Curricular_units_2nd_sem_approved': 'SKS Lulus Sem 2',
                             'Curricular_units_2nd_sem_grade': 'Rata-rata Nilai Sem 2'
                         }
@@ -913,6 +884,37 @@ elif selected_tab == "Pemindaian Angkatan (Batch Screening)":
                             file_name="laporan_skrining_risiko_mahasiswa.csv",
                             mime="text/csv"
                         )
+
+                        # 4. ACTION PLAN REKOMENDASI UNTUK KAMPUS (DILETAKKAN DI PALING BAWAH SEBAGAI TINDAK LANJUT)
+                        st.divider()
+                        st.markdown("### <i class='fa-solid fa-bullhorn' style='color:#2563EB;'></i> Rekomendasi Rencana Aksi Kampus (Institutional Action Plan)", unsafe_allow_html=True)
+                        st.caption("Langkah strategis terpadu institusi berdasarkan agregasi profil risiko angkatan mahasiswa di atas:")
+                        
+                        act_c1, act_c2, act_c3 = st.columns(3)
+                        with act_c1:
+                            with st.container(border=True):
+                                st.markdown("##### <i class='fa-solid fa-circle-exclamation' style='color:#DC2626;'></i> Prioritas 1: Kritis (> 60%)", unsafe_allow_html=True)
+                                st.markdown("""
+                                * **Konseling Terpadu:** Agendakan pemanggilan langsung bersama Dosen Pembimbing Akademik (DPA).
+                                * **Audit Finansial:** Fasilitasi skema cicilan SPP atau beasiswa darurat untuk mahasiswa berstatus menunggak.
+                                * **Proteksi Registrasi:** Kunci opsi pengunduran diri sepihak sebelum sesi mediasi selesai.
+                                """)
+                        with act_c2:
+                            with st.container(border=True):
+                                st.markdown("##### <i class='fa-solid fa-triangle-exclamation' style='color:#F59E0B;'></i> Prioritas 2: Waspada (40% - 60%)", unsafe_allow_html=True)
+                                st.markdown("""
+                                * **Kelas Remedial & Asistensi:** Wajibkan keikutsertaan dalam kelompok belajar sebaya (*peer tutoring*).
+                                * **Restrukturisasi SKS:** Batasi pengambilan beban SKS di semester berikutnya maksimal 18–20 SKS.
+                                * **Monitoring Berkala:** Jadwalkan pelaporan kemajuan belajar bulanan ke prodi.
+                                """)
+                        with act_c3:
+                            with st.container(border=True):
+                                st.markdown("##### <i class='fa-solid fa-circle-check' style='color:#10B981;'></i> Prioritas 3: Stabil (< 40%)", unsafe_allow_html=True)
+                                st.markdown("""
+                                * **Akselerasi Prestasi:** Dorong keterlibatan dalam program MBKM, magang industri, dan riset dosen.
+                                * **Peluang Beasiswa Prestasi:** Rekomendasikan untuk skema pendanaan prestasi atau asisten laboratorium.
+                                * **Pemantauan Mandiri:** Evaluasi rutin mandiri melalui portal akademik kampus.
+                                """)
 
         except Exception as err:
             show_batch_file_error_modal([f"Terjadi kesalahan teknis saat membaca berkas: {err}"])
