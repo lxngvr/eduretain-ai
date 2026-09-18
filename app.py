@@ -353,8 +353,8 @@ st.write("")
 if selected_tab == "Evaluasi Mahasiswa (Individual)":
     input_name = st.text_input(
         "Nama Lengkap Mahasiswa",
-        value=st.session_state.get('student_name', 'Galang Dava Ramadhan'),
-        placeholder="Ketik nama mahasiswa yang akan dievaluasi...",
+        value=st.session_state.get('student_name', ''),
+        placeholder="Contoh: Budi Santoso",
         help="Nama digunakan untuk personalisasi lembar rekomendasi."
     )
 
