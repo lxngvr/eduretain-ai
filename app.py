@@ -136,6 +136,19 @@ st.markdown("""
             padding: 1rem !important;
         }
     }
+    
+    /* TERJEMAHKAN TOOLTIP ERROR BAWAAN STREAMLIT KE BAHASA INDONESIA */
+    div[data-baseweb="popover"] div[role="tooltip"] {
+        font-size: 0 !important; /* Sembunyikan teks bawaan bahasa Inggris */
+    }
+    div[data-baseweb="popover"] div[role="tooltip"]::before {
+        content: "Peringatan: Angka di luar batas acuan data. Silakan masukkan nilai yang sesuai." !important;
+        font-size: 0.82rem !important;
+        font-family: 'Nunito', sans-serif !important;
+        color: #FFFFFF !important;
+        display: block;
+        line-height: 1.3;
+    }
 </style>
 """, unsafe_allow_html=True)
 
