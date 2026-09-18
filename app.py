@@ -364,7 +364,7 @@ if selected_tab == "Evaluasi Mahasiswa (Individual)":
     input_name = st.text_input(
         "Nama Lengkap Mahasiswa",
         value=st.session_state.get('student_name', ''),
-        placeholder="Contoh: Budi Santoso",
+        placeholder="Contoh: Acuy Amalakacuy",
         help="Nama wajib diisi untuk membuka personalisasi evaluasi."
     )
 
