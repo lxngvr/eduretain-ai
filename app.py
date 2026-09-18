@@ -331,7 +331,10 @@ def show_batch_file_error_modal(error_messages):
     for msg in error_messages:
         st.markdown(f"- {msg}")
     st.info("Pastikan berkas CSV memuat parameter akademik utama seperti kolom SKS, nilai semester, dan status pembayaran SPP.")
+    
     if st.button("Tutup & Unggah Ulang Berkas", type="primary", use_container_width=True):
+        # Naikkan counter key agar file_uploader ter-reset bersih
+        st.session_state["uploader_key"] = st.session_state.get("uploader_key", 0) + 1
         st.rerun()
 
 # PANEL SIDEBAR
@@ -733,7 +736,15 @@ elif selected_tab == "Pemindaian Angkatan (Batch Screening)":
     """, unsafe_allow_html=True)
     st.caption("Unggah berkas rekapitulasi angkatan (.csv) untuk mendeteksi kelompok mahasiswa rentan putus studi secara serempak.")
 
-    uploaded_file = st.file_uploader("Pilih Berkas CSV", type=["csv"], help="Format berkas CSV harus memuat data angkatan mahasiswa.")
+    if "uploader_key" not in st.session_state:
+        st.session_state["uploader_key"] = 0
+
+    uploaded_file = st.file_uploader(
+        "Pilih Berkas CSV", 
+        type=["csv"], 
+        help="Format berkas CSV harus memuat data angkatan mahasiswa.",
+        key=f"csv_uploader_{st.session_state['uploader_key']}"
+    )
 
     if uploaded_file is None:
         with st.container(border=True):
