@@ -135,67 +135,69 @@ st.markdown("""
         line-height: 1.3;
     }
 
-    /* 9. ATUR TAMPILAN FILE UPLOADER: 1 TOMBOL BERSIH UNTUK EDIT BERKAS */
+    /* 9. STYLING FILE UPLOADER (TOMBOL SILANG TETAP X, HANYA TOMBOL LUAR JADI EDIT BERKAS) */
     
-    /* Tombol silang (x) di dalam kapsul file tetap bersih untuk hapus berkas */
-    [data-testid="stFileUploaderFile"] button {
+    /* Lindungi tombol silang (delete) di dalam preview berkas */
+    [data-testid="stFileUploaderFile"] button,
+    button[aria-label="Delete"] {
+        display: inline-flex !important;
         background: transparent !important;
         border: none !important;
         padding: 0 !important;
-        font-size: 0.95rem !important;
+        color: #94A3B8 !important;
         cursor: pointer !important;
     }
+    [data-testid="stFileUploaderFile"] button *,
+    button[aria-label="Delete"] * {
+        display: inline-block !important;
+    }
     [data-testid="stFileUploaderFile"] button::before,
-    [data-testid="stFileUploaderFile"] button::after {
+    [data-testid="stFileUploaderFile"] button::after,
+    button[aria-label="Delete"]::before,
+    button[aria-label="Delete"]::after {
         content: none !important;
     }
 
-    /* Target tombol kedua (tombol +) di samping berkas */
-    [data-testid="stFileUploaderDropzone"] > div > button,
-    [data-testid="stFileUploaderDropzone"] button:not([data-testid*="stFileUploaderFile"] button) {
+    /* Hanya targetkan tombol penambahan/penggantian di luar kotak berkas */
+    [data-testid="stFileUploaderDropzone"] > div > button:not([aria-label="Delete"]),
+    [data-testid="stFileUploaderDropzone"] button:not([data-testid*="stFileUploaderFile"] button):not([aria-label="Delete"]) {
         display: inline-flex !important;
         align-items: center !important;
         justify-content: center !important;
-        gap: 0.5rem !important;
-        padding: 0.4rem 0.85rem !important;
-        border-radius: 0.5rem !important;
-        background-color: rgba(37, 99, 235, 0.15) !important;
+        gap: 0.45rem !important;
+        padding: 0.35rem 0.8rem !important;
+        border-radius: 0.45rem !important;
+        background-color: rgba(37, 99, 235, 0.12) !important;
         border: 1px solid rgba(37, 99, 235, 0.4) !important;
         cursor: pointer !important;
-        line-height: 1 !important;
         transition: all 0.2s ease-in-out !important;
     }
 
-    /* Sembunyikan seluruh teks dan tanda (+) bawaan di dalam tombol */
-    [data-testid="stFileUploaderDropzone"] > div > button *,
-    [data-testid="stFileUploaderDropzone"] button:not([data-testid*="stFileUploaderFile"] button) * {
+    [data-testid="stFileUploaderDropzone"] > div > button:not([aria-label="Delete"]) *,
+    [data-testid="stFileUploaderDropzone"] button:not([data-testid*="stFileUploaderFile"] button):not([aria-label="Delete"]) * {
         display: none !important;
     }
 
-    /* Efek hover tombol */
-    [data-testid="stFileUploaderDropzone"] > div > button:hover,
-    [data-testid="stFileUploaderDropzone"] button:not([data-testid*="stFileUploaderFile"] button):hover {
-        background-color: rgba(37, 99, 235, 0.28) !important;
+    [data-testid="stFileUploaderDropzone"] > div > button:not([aria-label="Delete"]):hover,
+    [data-testid="stFileUploaderDropzone"] button:not([data-testid*="stFileUploaderFile"] button):not([aria-label="Delete"]):hover {
+        background-color: rgba(37, 99, 235, 0.25) !important;
         border-color: #2563EB !important;
-        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2) !important;
     }
 
-    /* Munculkan ikon font awesome */
-    [data-testid="stFileUploaderDropzone"] > div > button::before,
-    [data-testid="stFileUploaderDropzone"] button:not([data-testid*="stFileUploaderFile"] button):before {
-        content: "\f2f1" !important;
+    [data-testid="stFileUploaderDropzone"] > div > button:not([aria-label="Delete"])::before,
+    [data-testid="stFileUploaderDropzone"] button:not([data-testid*="stFileUploaderFile"] button):not([aria-label="Delete"])::before {
+        content: "\\f2f1" !important;
         font-family: "Font Awesome 6 Free" !important;
         font-weight: 900 !important;
-        font-size: 0.85rem !important;
+        font-size: 0.8rem !important;
         color: #60A5FA !important;
         display: inline-block !important;
     }
 
-    /* Munculkan teks 'Edit Berkas' */
-    [data-testid="stFileUploaderDropzone"] > div > button::after,
-    [data-testid="stFileUploaderDropzone"] button:not([data-testid*="stFileUploaderFile"] button):after {
-        content: "Edit Berkas" !important;
-        font-size: 0.82rem !important;
+    [data-testid="stFileUploaderDropzone"] > div > button:not([aria-label="Delete"])::after,
+    [data-testid="stFileUploaderDropzone"] button:not([data-testid*="stFileUploaderFile"] button):not([aria-label="Delete"])::after {
+        content: "Ubah Berkas" !important;
+        font-size: 0.8rem !important;
         font-weight: 700 !important;
         font-family: 'Nunito', sans-serif !important;
         color: #60A5FA !important;
@@ -868,7 +870,7 @@ elif selected_tab == "Pemindaian Angkatan (Batch Screening)":
                         if probabilities is not None:
                             df_upload['Risiko_Dropout_Persen'] = [round(float(p[1]) * 100, 2) for p in probabilities]
 
-                        # 2. KPI RINGKASAN EKSEKUTIF MENGGUNAKAN KARTU MODERN SESUAI KAIDAH UI/UX
+                        # 2. KPI RINGKASAN EKSEKUTIF
                         total_mhs = len(df_upload)
                         total_dropout = int((df_upload['Prediksi_Status'] == 'Dropout').sum())
                         pct_dropout = float((total_dropout / total_mhs) * 100) if total_mhs > 0 else 0.0
@@ -937,7 +939,7 @@ elif selected_tab == "Pemindaian Angkatan (Batch Screening)":
                             </div>
                             """, unsafe_allow_html=True)
 
-                        # 3. DEKODE NILAI BINER & PENYESUAIAN NAMA KOLOM AGAR MUDAH DIPAHAMI USER
+                        # 3. DEKODE NILAI BINER & PENYESUAIAN NAMA KOLOM
                         st.write("")
                         st.markdown("##### <i class='fa-solid fa-table-list' style='color:#2563EB;'></i> Hasil Pemindaian & Daftar Prioritas Penanganan", unsafe_allow_html=True)
                         
@@ -1024,7 +1026,7 @@ elif selected_tab == "Pemindaian Angkatan (Batch Screening)":
                             mime="text/csv"
                         )
 
-                        # 4. ACTION PLAN REKOMENDASI UNTUK KAMPUS (POSISI DI PALING BAWAH & HANYA MUNCUL 1 DENGAN IF-ELSE)
+                        # 4. ACTION PLAN REKOMENDASI UNTUK KAMPUS
                         st.divider()
                         st.markdown("### <i class='fa-solid fa-bullhorn' style='color:#2563EB;'></i> Rekomendasi Rencana Aksi Kampus (Institutional Action Plan)", unsafe_allow_html=True)
                         st.caption("Sistem secara otomatis merumuskan 1 rencana aksi utama berdasarkan profil sebaran risiko angkatan:")
