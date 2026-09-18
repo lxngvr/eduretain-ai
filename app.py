@@ -135,56 +135,71 @@ st.markdown("""
         line-height: 1.3;
     }
 
-    /* 9. HANYA UBAH TOMBOL TAMBAH (+) MENJADI SATU TOMBOL 'UBAH BERKAS' */
-    /* Kembalikan tombol silang (x) agar tetap normal dan bersih */
+    /* 9. ATUR TAMPILAN FILE UPLOADER: 1 TOMBOL BERSIH UNTUK EDIT BERKAS */
+    
+    /* Tombol silang (x) di dalam kapsul file tetap bersih untuk hapus berkas */
     [data-testid="stFileUploaderFile"] button {
-        font-size: 1rem !important;
         background: transparent !important;
         border: none !important;
         padding: 0 !important;
+        font-size: 0.95rem !important;
+        cursor: pointer !important;
     }
     [data-testid="stFileUploaderFile"] button::before,
     [data-testid="stFileUploaderFile"] button::after {
         content: none !important;
     }
 
-    /* Target hanya tombol (+) di sebelah berkas */
+    /* Target tombol kedua (tombol +) di samping berkas */
     [data-testid="stFileUploaderDropzone"] > div > button,
     [data-testid="stFileUploaderDropzone"] button:not([data-testid*="stFileUploaderFile"] button) {
-        font-size: 0 !important;
         display: inline-flex !important;
         align-items: center !important;
         justify-content: center !important;
-        gap: 0.45rem !important;
-        padding: 0.35rem 0.75rem !important;
-        border-radius: 0.45rem !important;
-        background-color: rgba(37, 99, 235, 0.12) !important;
-        border: 1px solid rgba(37, 99, 235, 0.35) !important;
+        gap: 0.5rem !important;
+        padding: 0.4rem 0.85rem !important;
+        border-radius: 0.5rem !important;
+        background-color: rgba(37, 99, 235, 0.15) !important;
+        border: 1px solid rgba(37, 99, 235, 0.4) !important;
         cursor: pointer !important;
+        line-height: 1 !important;
         transition: all 0.2s ease-in-out !important;
     }
 
-    [data-testid="stFileUploaderDropzone"] > div > button:hover {
-        background-color: rgba(37, 99, 235, 0.25) !important;
-        border-color: #2563EB !important;
+    /* Sembunyikan seluruh teks dan tanda (+) bawaan di dalam tombol */
+    [data-testid="stFileUploaderDropzone"] > div > button *,
+    [data-testid="stFileUploaderDropzone"] button:not([data-testid*="stFileUploaderFile"] button) * {
+        display: none !important;
     }
 
-    [data-testid="stFileUploaderDropzone"] > div > button::before {
+    /* Efek hover tombol */
+    [data-testid="stFileUploaderDropzone"] > div > button:hover,
+    [data-testid="stFileUploaderDropzone"] button:not([data-testid*="stFileUploaderFile"] button):hover {
+        background-color: rgba(37, 99, 235, 0.28) !important;
+        border-color: #2563EB !important;
+        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2) !important;
+    }
+
+    /* Munculkan ikon font awesome */
+    [data-testid="stFileUploaderDropzone"] > div > button::before,
+    [data-testid="stFileUploaderDropzone"] button:not([data-testid*="stFileUploaderFile"] button):before {
         content: "\f2f1" !important;
         font-family: "Font Awesome 6 Free" !important;
         font-weight: 900 !important;
-        font-size: 0.8rem !important;
+        font-size: 0.85rem !important;
         color: #60A5FA !important;
-        visibility: visible !important;
+        display: inline-block !important;
     }
 
-    [data-testid="stFileUploaderDropzone"] > div > button::after {
-        content: "Ubah Berkas" !important;
-        font-size: 0.8rem !important;
+    /* Munculkan teks 'Edit Berkas' */
+    [data-testid="stFileUploaderDropzone"] > div > button::after,
+    [data-testid="stFileUploaderDropzone"] button:not([data-testid*="stFileUploaderFile"] button):after {
+        content: "Edit Berkas" !important;
+        font-size: 0.82rem !important;
         font-weight: 700 !important;
         font-family: 'Nunito', sans-serif !important;
         color: #60A5FA !important;
-        visibility: visible !important;
+        display: inline-block !important;
     }
 
     /* 10. MEDIA QUERIES RESPONSIF KHUSUS KONTEN UTAMA */
