@@ -282,14 +282,28 @@ def show_developer_modal():
 
 # PANEL SIDEBAR
 with st.sidebar:
-    # TAMPILKAN LOGO DI ATAS MENU SIDEBAR
-    if LOGO_PATH:
-        st.image(LOGO_PATH, use_container_width=True)
+    # TAMPILAN HEADER LOGO & TEKS SEJAJAR (INLINE)
+    col_logo, col_title = st.columns([1, 3.2], vertical_alignment="center")
     
-    st.markdown("""
-    <h3><i class="fa-solid fa-sliders" style="color:#2563EB;"></i> Pusat Kontrol</h3>
-    """, unsafe_allow_html=True)
-    st.markdown("**EduRetain AI Platform**  \nSistem Deteksi Dini & Retensi Mahasiswa")
+    with col_logo:
+        if LOGO_PATH:
+            st.image(LOGO_PATH, width=54)
+        else:
+            st.markdown("<h2 style='margin:0;'>🎓</h2>", unsafe_allow_html=True)
+            
+    with col_title:
+        st.markdown("""
+        <div style="line-height: 1.2;">
+            <div style="font-size: 1.15rem; font-weight: 800; color: #FFFFFF; letter-spacing: -0.3px;">
+                EduRetain <span style="color: #60A5FA;">AI</span>
+            </div>
+            <div style="font-size: 0.75rem; color: #94A3B8; font-weight: 600;">
+                Early Warning System
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("<div style='margin-bottom: 0.5rem;'></div>", unsafe_allow_html=True)
     st.divider()
     
     st.markdown("##### Informasi & Parameter")
