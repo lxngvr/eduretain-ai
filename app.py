@@ -282,31 +282,32 @@ def show_developer_modal():
 
 # PANEL SIDEBAR
 with st.sidebar:
-    # TAMPILAN HEADER LOGO & TEKS SEJAJAR (INLINE)
+    # TAMPILAN HEADER LOGO & TEKS SEJAJAR (LEBIH BESAR & PROPORSIONAL)
     col_logo, col_title = st.columns([1.1, 3], vertical_alignment="center")
     
     with col_logo:
         if LOGO_PATH:
-            st.image(LOGO_PATH, width=100)
+            st.image(LOGO_PATH, width=500)
         else:
             st.markdown("<h2 style='margin:0;'>🎓</h2>", unsafe_allow_html=True)
             
     with col_title:
         st.markdown("""
-        <div style="line-height: 1.2;">
-            <div style="font-size: 1.15rem; font-weight: 800; color: #FFFFFF; letter-spacing: -0.3px;">
+        <div style="line-height: 1.15; padding-left: 2px; margin-top: -17px;">
+            <div style="font-size: 1.5rem; font-weight: 800; color: #FFFFFF; letter-spacing: -0.3px;">
                 EduRetain <span style="color: #60A5FA;">AI</span>
             </div>
-            <div style="font-size: 0.75rem; color: #94A3B8; font-weight: 600;">
+            <div style="font-size: 0.875rem; color: #94A3B8; font-weight: 600;">
                 Early Warning System
             </div>
         </div>
         """, unsafe_allow_html=True)
+        
 
-    st.markdown("<div style='margin-bottom: 0.5rem;'></div>", unsafe_allow_html=True)
-    st.divider()
+    st.markdown("""
+    <hr style="margin-top: -10px; margin-bottom: 1rem; border: none; border-top: 1px solid rgba(255, 255, 255, 0.12);">
+    """, unsafe_allow_html=True)
     
-    st.markdown("##### Informasi & Parameter")
     if st.button("Spesifikasi Model AI", icon=":material/memory:", use_container_width=True):
         show_model_modal()
         
