@@ -757,7 +757,6 @@ elif selected_tab == "Pemindaian Angkatan (Batch Screening)":
             if df_upload.empty:
                 batch_errors.append("Berkas CSV yang diunggah kosong (tidak memiliki baris data).")
 
-            # Daftar fitur kunci minimal yang wajib ada untuk inferensi
             required_features = [
                 'Curricular_units_1st_sem_enrolled',
                 'Curricular_units_1st_sem_approved',
@@ -777,7 +776,6 @@ elif selected_tab == "Pemindaian Angkatan (Batch Screening)":
             else:
                 st.success(f"Berkas valid dan siap diproses: terdeteksi **{len(df_upload)} baris data mahasiswa**.")
                 
-                # Otomatisasi kolom evaluasi jika tidak tersedia pada berkas
                 if 'Curricular_units_1st_sem_evaluations' not in df_upload.columns:
                     df_upload['Curricular_units_1st_sem_evaluations'] = df_upload['Curricular_units_1st_sem_enrolled'] + (df_upload['Curricular_units_1st_sem_enrolled'] - df_upload.get('Curricular_units_1st_sem_approved', 0))
                 if 'Curricular_units_2nd_sem_evaluations' not in df_upload.columns:
@@ -800,31 +798,86 @@ elif selected_tab == "Pemindaian Angkatan (Batch Screening)":
                         predictions = model.predict(processed_batch)
                         probabilities = model.predict_proba(processed_batch) if hasattr(model, "predict_proba") else None
 
-                        # Simpan hasil inferensi ke dataframe asli
                         df_upload['Prediksi_Status'] = [decode_label(p) for p in predictions]
                         if probabilities is not None:
                             df_upload['Risiko_Dropout_Persen'] = [round(float(p[1]) * 100, 2) for p in probabilities]
 
-                        # 2. KPI RINGKASAN EKSEKUTIF
+                        # 2. KPI RINGKASAN EKSEKUTIF MENGGUNAKAN KARTU MODERN SESUAI KAIDAH UI/UX
                         total_mhs = len(df_upload)
-                        total_dropout = (df_upload['Prediksi_Status'] == 'Dropout').sum()
-                        total_graduate = total_mhs - total_dropout
-                        pct_dropout = (total_dropout / total_mhs) * 100
+                        total_dropout = int((df_upload['Prediksi_Status'] == 'Dropout').sum())
+                        pct_dropout = float((total_dropout / total_mhs) * 100) if total_mhs > 0 else 0.0
+
+                        # Penentuan warna tema rasio: Merah (Kritis > 50%), Kuning (Waspada 25-50%), Hijau (Aman < 25%)
+                        if pct_dropout >= 50.0:
+                            ratio_border_color = "#DC2626"
+                            ratio_bg_color = "rgba(220, 38, 38, 0.08)"
+                            ratio_text_color = "#F87171"
+                            ratio_badge_text = "KRITIS / TINGGI"
+                            ratio_badge_color = "#DC2626"
+                        elif pct_dropout >= 25.0:
+                            ratio_border_color = "#F59E0B"
+                            ratio_bg_color = "rgba(245, 158, 11, 0.08)"
+                            ratio_text_color = "#FBBF24"
+                            ratio_badge_text = "WASPADA / SEDANG"
+                            ratio_badge_color = "#F59E0B"
+                        else:
+                            ratio_border_color = "#10B981"
+                            ratio_bg_color = "rgba(16, 185, 129, 0.08)"
+                            ratio_text_color = "#34D399"
+                            ratio_badge_text = "STABIL / TERKENDALI"
+                            ratio_badge_color = "#10B981"
 
                         st.divider()
                         k1, k2, k3 = st.columns(3)
-                        k1.metric("Total Mahasiswa Dipindai", f"{total_mhs:,}".replace(",", "."))
-                        k2.metric("Terindikasi Rawan Dropout", f"{total_dropout:,}".replace(",", "."))
-                        k3.metric("Rasio Mahasiswa Kritis", f"{pct_dropout:.1f}%")
+                        
+                        with k1:
+                            st.markdown(f"""
+                            <div style="padding: 1.1rem; border-radius: 0.75rem; border: 1px solid rgba(37, 99, 235, 0.35); background: rgba(37, 99, 235, 0.06); margin-bottom: 0.5rem;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="font-size: 0.85rem; font-weight: 700; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.5px;">Total Mahasiswa</span>
+                                    <i class="fa-solid fa-users" style="color: #60A5FA; font-size: 1.1rem;"></i>
+                                </div>
+                                <div style="font-size: 2.1rem; font-weight: 800; color: #FFFFFF; margin-top: 0.35rem;">
+                                    {total_mhs:,}
+                                </div>
+                                <div style="font-size: 0.78rem; color: #64748B; margin-top: 0.15rem;">Seluruh data populasi angkatan</div>
+                            </div>
+                            """.replace(",", "."), unsafe_allow_html=True)
+                            
+                        with k2:
+                            st.markdown(f"""
+                            <div style="padding: 1.1rem; border-radius: 0.75rem; border: 1px solid rgba(220, 38, 38, 0.45); background: rgba(220, 38, 38, 0.08); margin-bottom: 0.5rem;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="font-size: 0.85rem; font-weight: 700; color: #FCA5A5; text-transform: uppercase; letter-spacing: 0.5px;">Potensi Dropout</span>
+                                    <i class="fa-solid fa-triangle-exclamation" style="color: #EF4444; font-size: 1.1rem;"></i>
+                                </div>
+                                <div style="font-size: 2.1rem; font-weight: 800; color: #F87171; margin-top: 0.35rem;">
+                                    {total_dropout:,}
+                                </div>
+                                <div style="font-size: 0.78rem; color: #FCA5A5; margin-top: 0.15rem;">Membutuhkan mitigasi akademik</div>
+                            </div>
+                            """.replace(",", "."), unsafe_allow_html=True)
+
+                        with k3:
+                            st.markdown(f"""
+                            <div style="padding: 1.1rem; border-radius: 0.75rem; border: 1px solid {ratio_border_color}; background: {ratio_bg_color}; margin-bottom: 0.5rem;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="font-size: 0.85rem; font-weight: 700; color: {ratio_text_color}; text-transform: uppercase; letter-spacing: 0.5px;">Rasio Mahasiswa Kritis</span>
+                                    <span style="font-size: 0.7rem; font-weight: 800; background-color: {ratio_badge_color}; color: #FFFFFF; padding: 2px 7px; border-radius: 9999px;">{ratio_badge_text}</span>
+                                </div>
+                                <div style="font-size: 2.1rem; font-weight: 800; color: {ratio_text_color}; margin-top: 0.35rem;">
+                                    {pct_dropout:.1f}%
+                                </div>
+                                <div style="font-size: 0.78rem; color: #94A3B8; margin-top: 0.15rem;">Proporsi risiko dari populasi terdeteksi</div>
+                            </div>
+                            """, unsafe_allow_html=True)
 
                         # 3. DEKODE NILAI BINER & PENYESUAIAN NAMA KOLOM AGAR MUDAH DIPAHAMI USER
-                        st.divider()
+                        st.write("")
                         st.markdown("##### <i class='fa-solid fa-table-list' style='color:#2563EB;'></i> Hasil Pemindaian & Daftar Prioritas Penanganan", unsafe_allow_html=True)
                         
-                        # Buat salinan representatif untuk tampilan
                         df_display = df_upload.copy()
                         
-                        # Dekode nilai biner menjadi teks bahasa Indonesia yang jelas
                         if 'Tuition_fees_up_to_date' in df_display.columns:
                             df_display['Tuition_fees_up_to_date'] = df_display['Tuition_fees_up_to_date'].map({1: 'Lunas', 0: 'Menunggak'}).fillna(df_display['Tuition_fees_up_to_date'])
                         if 'Debtor' in df_display.columns:
@@ -834,7 +887,6 @@ elif selected_tab == "Pemindaian Angkatan (Batch Screening)":
                         if 'Gender' in df_display.columns:
                             df_display['Gender'] = df_display['Gender'].map({1: 'Laki-laki', 0: 'Perempuan'}).fillna(df_display['Gender'])
 
-                        # Kamus penyesuaian seluruh nama kolom agar ramah pengguna tanpa underscore
                         rename_dict = {
                             'NIM': 'NIM',
                             'Nama_Mahasiswa': 'Nama Mahasiswa',
@@ -858,22 +910,45 @@ elif selected_tab == "Pemindaian Angkatan (Batch Screening)":
                         }
                         
                         df_display = df_display.rename(columns=rename_dict)
-                        
-                        # Filter opsi tampilan tabel
+
+                        # Helper pewarnaan baris/sel tabel (Merah > 60%, Kuning 40-60%, Hijau < 40%)
+                        def highlight_risk_cells(val):
+                            if isinstance(val, (int, float)):
+                                if val >= 60.0:
+                                    return 'background-color: rgba(220, 38, 38, 0.28); color: #FCA5A5; font-weight: 800;'
+                                elif val >= 40.0:
+                                    return 'background-color: rgba(245, 158, 11, 0.25); color: #FDE68A; font-weight: 700;'
+                                else:
+                                    return 'background-color: rgba(16, 185, 129, 0.22); color: #86EFAC; font-weight: 700;'
+                            return ''
+
                         filter_tab1, filter_tab2 = st.tabs(["Prioritas Intervensi (Risiko > 60%)", "Seluruh Data Angkatan"])
                         
                         with filter_tab1:
                             if 'Tingkat Risiko (%)' in df_display.columns:
-                                df_high_risk = df_display[df_display['Tingkat Risiko (%)'] >= 60.0]
+                                df_high_risk = df_display[df_display['Tingkat Risiko (%)'] >= 60.0].sort_values(by='Tingkat Risiko (%)', ascending=False)
                             else:
                                 df_high_risk = df_display[df_display['Status Prediksi'] == 'Dropout']
                             
-                            st.caption(f"Menampilkan **{len(df_high_risk)} mahasiswa** yang memerlukan tindakan mitigasi darurat.")
-                            st.dataframe(df_high_risk, use_container_width=True)
+                            st.markdown(f"""
+                            <div style="display: inline-block; padding: 4px 10px; border-radius: 6px; background-color: rgba(220, 38, 38, 0.15); border: 1px solid #DC2626; color: #FCA5A5; font-weight: 700; font-size: 0.82rem; margin-bottom: 0.5rem;">
+                                <i class="fa-solid fa-triangle-exclamation"></i> Terdeteksi {len(df_high_risk)} mahasiswa dalam zona risiko tinggi (> 60%). Tindakan penyelamatan darurat diperlukan segera.
+                            </div>
+                            """, unsafe_allow_html=True)
+                            
+                            if 'Tingkat Risiko (%)' in df_high_risk.columns:
+                                styled_high = df_high_risk.style.map(highlight_risk_cells, subset=['Tingkat Risiko (%)'])
+                                st.dataframe(styled_high, use_container_width=True)
+                            else:
+                                st.dataframe(df_high_risk, use_container_width=True)
                             
                         with filter_tab2:
                             st.caption(f"Menampilkan total rekapitulasi **{len(df_display)} mahasiswa**.")
-                            st.dataframe(df_display, use_container_width=True)
+                            if 'Tingkat Risiko (%)' in df_display.columns:
+                                styled_all = df_display.style.map(highlight_risk_cells, subset=['Tingkat Risiko (%)'])
+                                st.dataframe(styled_all, use_container_width=True)
+                            else:
+                                st.dataframe(df_display, use_container_width=True)
 
                         # EXPORT BUTTON
                         csv_export = df_upload.to_csv(index=False).encode('utf-8')
@@ -885,36 +960,68 @@ elif selected_tab == "Pemindaian Angkatan (Batch Screening)":
                             mime="text/csv"
                         )
 
-                        # 4. ACTION PLAN REKOMENDASI UNTUK KAMPUS (DILETAKKAN DI PALING BAWAH SEBAGAI TINDAK LANJUT)
+                        # 4. ACTION PLAN REKOMENDASI UNTUK KAMPUS (MENGGUNAKAN KONDISI IF-ELSE: HANYA MUNCUL 1 SESUAI STATUS DATA)
                         st.divider()
                         st.markdown("### <i class='fa-solid fa-bullhorn' style='color:#2563EB;'></i> Rekomendasi Rencana Aksi Kampus (Institutional Action Plan)", unsafe_allow_html=True)
-                        st.caption("Langkah strategis terpadu institusi berdasarkan agregasi profil risiko angkatan mahasiswa di atas:")
-                        
-                        act_c1, act_c2, act_c3 = st.columns(3)
-                        with act_c1:
-                            with st.container(border=True):
-                                st.markdown("##### <i class='fa-solid fa-circle-exclamation' style='color:#DC2626;'></i> Prioritas 1: Kritis (> 60%)", unsafe_allow_html=True)
-                                st.markdown("""
-                                * **Konseling Terpadu:** Agendakan pemanggilan langsung bersama Dosen Pembimbing Akademik (DPA).
-                                * **Audit Finansial:** Fasilitasi skema cicilan SPP atau beasiswa darurat untuk mahasiswa berstatus menunggak.
-                                * **Proteksi Registrasi:** Kunci opsi pengunduran diri sepihak sebelum sesi mediasi selesai.
-                                """)
-                        with act_c2:
-                            with st.container(border=True):
-                                st.markdown("##### <i class='fa-solid fa-triangle-exclamation' style='color:#F59E0B;'></i> Prioritas 2: Waspada (40% - 60%)", unsafe_allow_html=True)
-                                st.markdown("""
-                                * **Kelas Remedial & Asistensi:** Wajibkan keikutsertaan dalam kelompok belajar sebaya (*peer tutoring*).
-                                * **Restrukturisasi SKS:** Batasi pengambilan beban SKS di semester berikutnya maksimal 18–20 SKS.
-                                * **Monitoring Berkala:** Jadwalkan pelaporan kemajuan belajar bulanan ke prodi.
-                                """)
-                        with act_c3:
-                            with st.container(border=True):
-                                st.markdown("##### <i class='fa-solid fa-circle-check' style='color:#10B981;'></i> Prioritas 3: Stabil (< 40%)", unsafe_allow_html=True)
-                                st.markdown("""
-                                * **Akselerasi Prestasi:** Dorong keterlibatan dalam program MBKM, magang industri, dan riset dosen.
-                                * **Peluang Beasiswa Prestasi:** Rekomendasikan untuk skema pendanaan prestasi atau asisten laboratorium.
-                                * **Pemantauan Mandiri:** Evaluasi rutin mandiri melalui portal akademik kampus.
-                                """)
+                        st.caption("Sistem secara otomatis merumuskan 1 rencana aksi utama berdasarkan profil sebaran risiko angkatan:")
+
+                        if pct_dropout >= 50.0:
+                            # KONDISI 1: SITUASI KRITIS (Merah)
+                            st.markdown("""
+                            <div style="padding: 1.25rem; border-radius: 0.75rem; border-left: 6px solid #DC2626; background: rgba(220, 38, 38, 0.08); border-top: 1px solid rgba(220,38,38,0.25); border-right: 1px solid rgba(220,38,38,0.25); border-bottom: 1px solid rgba(220,38,38,0.25);">
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 0.5rem;">
+                                    <span style="font-size: 0.75rem; font-weight: 800; background-color: #DC2626; color: #FFFFFF; padding: 2px 8px; border-radius: 4px;">PRIORITAS 1</span>
+                                    <span style="font-size: 1.15rem; font-weight: 800; color: #F87171;">Tindakan Darurat: Angkatan Dalam Zona Kritis (> 50% Berisiko)</span>
+                                </div>
+                                <p style="color: #E2E8F0; font-size: 0.9rem; margin-bottom: 0.75rem;">
+                                    Lebih dari separuh populasi angkatan terindikasi berada di ambang putus studi. Diperlukan intervensi institusional lintas unit secepatnya:
+                                </p>
+                                <ul style="color: #E2E8F0; font-size: 0.9rem; margin-bottom: 0; line-height: 1.6;">
+                                    <li><b>Konseling Terjadwal Wajib:</b> Terbitkan surat panggilan resmi bagi mahasiswa di tab <i>Prioritas Intervensi</i> bersama Dosen Pembimbing Akademik (DPA) dan orang tua/wali dalam kurun 7 hari ke depan.</li>
+                                    <li><b>Relaksasi Beban Finansial:</b> Biro Keuangan wajib membuka skema penangguhan atau cicilan khusus SPP bagi mahasiswa berstatus menunggak agar tidak terkendala administrasi ujian.</li>
+                                    <li><b>Proteksi Status Akademik:</b> Kunci sementara opsi pengunduran diri sepihak di sistem informasi akademik sebelum sesi mediasi prodi terlaksana.</li>
+                                    <li><b>Audit Silabus Semester Awal:</b> Gugus Penjaminan Mutu perlu meninjau tingkat kesulitan mata kuliah semester 1 dan 2 yang mencatat rasio ketidaklulusan tertinggi.</li>
+                                </ul>
+                            </div>
+                            """, unsafe_allow_html=True)
+
+                        elif pct_dropout >= 25.0:
+                            # KONDISI 2: SITUASI WASPADA (Kuning/Amber)
+                            st.markdown("""
+                            <div style="padding: 1.25rem; border-radius: 0.75rem; border-left: 6px solid #F59E0B; background: rgba(245, 158, 11, 0.08); border-top: 1px solid rgba(245,158,11,0.25); border-right: 1px solid rgba(245,158,11,0.25); border-bottom: 1px solid rgba(245,158,11,0.25);">
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 0.5rem;">
+                                    <span style="font-size: 0.75rem; font-weight: 800; background-color: #F59E0B; color: #000000; padding: 2px 8px; border-radius: 4px;">PRIORITAS 2</span>
+                                    <span style="font-size: 1.15rem; font-weight: 800; color: #FBBF24;">Tindakan Mitigasi Terarah: Angkatan Dalam Zona Waspada (25% - 50% Berisiko)</span>
+                                </div>
+                                <p style="color: #E2E8F0; font-size: 0.9rem; margin-bottom: 0.75rem;">
+                                    Tingkat risiko angkatan berada pada level menengah. Fokus utama diarahkan pada penguatan kompetensi akademik dan pencegahan penurunan performa:
+                                </p>
+                                <ul style="color: #E2E8F0; font-size: 0.9rem; margin-bottom: 0; line-height: 1.6;">
+                                    <li><b>Program Belajar Sebaya (Peer Tutoring):</b> Selenggarakan kelas asistensi intensif untuk mata kuliah dasar dengan melibatkan kakak tingkat berprestasi.</li>
+                                    <li><b>Restrukturisasi Kontrak SKS:</b> Batasi batas pengambilan rencana studi maksimal 18 SKS pada semester berikutnya bagi mahasiswa dengan SKS lulus rendah.</li>
+                                    <li><b>Monitoring Kemajuan Berkala:</b> DPA melakukan evaluasi capaian nilai setiap pertengahan semester (pasca-UTS) sebelum nilai akhir difinalisasi.</li>
+                                </ul>
+                            </div>
+                            """, unsafe_allow_html=True)
+
+                        else:
+                            # KONDISI 3: SITUASI STABIL / AMAN (Hijau)
+                            st.markdown("""
+                            <div style="padding: 1.25rem; border-radius: 0.75rem; border-left: 6px solid #10B981; background: rgba(16, 185, 129, 0.08); border-top: 1px solid rgba(16,185,129,0.25); border-right: 1px solid rgba(16,185,129,0.25); border-bottom: 1px solid rgba(16,185,129,0.25);">
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 0.5rem;">
+                                    <span style="font-size: 0.75rem; font-weight: 800; background-color: #10B981; color: #FFFFFF; padding: 2px 8px; border-radius: 4px;">PRIORITAS 3</span>
+                                    <span style="font-size: 1.15rem; font-weight: 800; color: #34D399;">Kondisi Prima: Angkatan Dalam Kondisi Stabil (< 25% Berisiko)</span>
+                                </div>
+                                <p style="color: #E2E8F0; font-size: 0.9rem; margin-bottom: 0.75rem;">
+                                    Mayoritas mahasiswa berada pada trajektori kelulusan yang sehat. Kampus dapat memaksimalkan program pengembangan potensi unggulan:
+                                </p>
+                                <ul style="color: #E2E8F0; font-size: 0.9rem; margin-bottom: 0; line-height: 1.6;">
+                                    <li><b>Akselerasi Program Unggulan:</b> Salurkan mahasiswa ke program magang bersertifikat (MBKM), riset kolaboratif dosen, dan kompetisi ilmiah nasional.</li>
+                                    <li><b>Pemberian Insentif Beasiswa Prestasi:</b> Fasilitasi skema penghargaan akademik untuk mempertahankan indeks prestasi kumulatif.</li>
+                                    <li><b>Pemantauan Sistem Otomatis:</b> Cukup lakukan peninjauan rutin mandiri melalui dasbor analitik akademik kampus setiap pergantian semester.</li>
+                                </ul>
+                            </div>
+                            """, unsafe_allow_html=True)
 
         except Exception as err:
             show_batch_file_error_modal([f"Terjadi kesalahan teknis saat membaca berkas: {err}"])
