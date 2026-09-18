@@ -321,6 +321,19 @@ def show_validation_modal(errors):
     if st.button("Mengerti & Perbaiki Data", type="primary", use_container_width=True):
         st.rerun()
 
+# MODAL POP-UP 4: VALIDASI BERKAS BATCH SCREENING
+@st.dialog("Peringatan: Berkas Tidak Sesuai")
+def show_batch_file_error_modal(error_messages):
+    st.markdown("""
+    <h4><i class="fa-solid fa-file-circle-xmark" style="color:#DC2626;"></i> Format Berkas CSV Tidak Valid</h4>
+    """, unsafe_allow_html=True)
+    st.write("Sistem tidak dapat memproses berkas yang diunggah karena alasan berikut:")
+    for msg in error_messages:
+        st.markdown(f"- {msg}")
+    st.info("Pastikan berkas CSV memuat parameter akademik utama seperti kolom SKS, nilai semester, dan status pembayaran SPP.")
+    if st.button("Tutup & Unggah Ulang Berkas", type="primary", use_container_width=True):
+        st.rerun()
+
 # PANEL SIDEBAR
 with st.sidebar:
     # HEADER LOGO & IDENTITAS
@@ -434,7 +447,7 @@ if selected_tab == "Evaluasi Mahasiswa (Individual)":
                 "Usia Saat Masuk (Tahun)",
                 min_value=17,
                 max_value=70,
-                value=17,
+                value=20,
                 step=1,
                 help="Batas usia acuan: 17 sampai 70 tahun. Tombol minus (-) otomatis terkunci pada angka 17.",
                 key="widget_age",
@@ -448,7 +461,7 @@ if selected_tab == "Evaluasi Mahasiswa (Individual)":
                 "Nilai Ujian Masuk (0 - 200)",
                 min_value=0.0,
                 max_value=200.0,
-                value=0.0,
+                value=126.0,
                 step=0.5,
                 help="Skala nilai seleksi masuk: 0 sampai 200.",
                 key="widget_admission_grade",
@@ -458,7 +471,7 @@ if selected_tab == "Evaluasi Mahasiswa (Individual)":
                 "SKS Diambil Sem 1",
                 min_value=0,
                 max_value=26,
-                value=0,
+                value=6,
                 step=1,
                 key="widget_sem1_enrolled",
                 help="Batas pengambilan: 0 sampai 26 SKS.",
@@ -468,7 +481,7 @@ if selected_tab == "Evaluasi Mahasiswa (Individual)":
                 "SKS Lulus Sem 1",
                 min_value=0,
                 max_value=int(sem1_enrolled),
-                value=min(0, int(sem1_enrolled)),
+                value=min(5, int(sem1_enrolled)),
                 step=1,
                 key="widget_sem1_approved",
                 help="Otomatis terkunci agar tidak melebihi SKS yang diambil.",
@@ -478,7 +491,7 @@ if selected_tab == "Evaluasi Mahasiswa (Individual)":
                 "Rata-rata Nilai Sem 1 (0 - 20)",
                 min_value=0.0,
                 max_value=20.0,
-                value=0.0,
+                value=12.3,
                 step=0.1,
                 help="Skala akademik: 0 sampai 20.",
                 key="widget_sem1_grade",
@@ -492,7 +505,7 @@ if selected_tab == "Evaluasi Mahasiswa (Individual)":
                 "SKS Diambil Sem 2",
                 min_value=0,
                 max_value=26,
-                value=0,
+                value=6,
                 step=1,
                 key="widget_sem2_enrolled",
                 help="Batas pengambilan: 0 sampai 26 SKS.",
@@ -502,7 +515,7 @@ if selected_tab == "Evaluasi Mahasiswa (Individual)":
                 "SKS Lulus Sem 2",
                 min_value=0,
                 max_value=int(sem2_enrolled),
-                value=min(0, int(sem2_enrolled)),
+                value=min(5, int(sem2_enrolled)),
                 step=1,
                 key="widget_sem2_approved",
                 help="Otomatis terkunci agar tidak melebihi SKS yang diambil.",
@@ -512,21 +525,19 @@ if selected_tab == "Evaluasi Mahasiswa (Individual)":
                 "Rata-rata Nilai Sem 2 (0 - 20)",
                 min_value=0.0,
                 max_value=20.0,
-                value=0.0,
+                value=12.2,
                 step=0.1,
                 help="Skala akademik: 0 sampai 20.",
                 key="widget_sem2_grade",
                 on_change=reset_prediction
             )
 
-    # Otomatisasi kalkulasi beban evaluasi
     calc_sem1_eval = int(sem1_enrolled) + max(0, (int(sem1_enrolled) - int(sem1_approved)))
     calc_sem2_eval = int(sem2_enrolled) + max(0, (int(sem2_enrolled) - int(sem2_approved)))
 
     st.write("")
 
     if st.button("Jalankan Analisis Risiko", type="primary", use_container_width=True):
-        # KUMPULKAN DAFTAR VALIDASI INPUT
         validation_errors = []
 
         if not input_name.strip():
@@ -556,7 +567,6 @@ if selected_tab == "Evaluasi Mahasiswa (Individual)":
         if sem2_grade is None or sem2_grade < 0.0 or sem2_grade > 20.0:
             validation_errors.append(f"**Rata-rata Nilai Sem 2** ({sem2_grade}) di luar skala (0 hingga 20).")
 
-        # JIKA ADA KESALAHAN, PICU MODAL POP-UP
         if validation_errors:
             st.session_state['has_predicted'] = False
             show_validation_modal(validation_errors)
@@ -586,7 +596,6 @@ if selected_tab == "Evaluasi Mahasiswa (Individual)":
             st.session_state['proba'] = proba
             st.rerun()
 
-    # LEMBAR HASIL EVALUASI (HANYA MUNCUL JIKA SUDAH DIANALISIS DAN TIDAK DIRUBAH INPUTNYA)
     if st.session_state.get('has_predicted', False):
         display_name = st.session_state.get('student_name', 'Mahasiswa')
         current_data = st.session_state['current_data']
@@ -732,64 +741,167 @@ elif selected_tab == "Pemindaian Angkatan (Batch Screening)":
     else:
         try:
             df_upload = pd.read_csv(uploaded_file)
-            st.success(f"Berkas berhasil dimuat: terdeteksi **{len(df_upload)} baris data mahasiswa**.")
             
-            if 'Curricular_units_1st_sem_evaluations' not in df_upload.columns and 'Curricular_units_1st_sem_enrolled' in df_upload.columns:
-                df_upload['Curricular_units_1st_sem_evaluations'] = df_upload['Curricular_units_1st_sem_enrolled'] + (df_upload['Curricular_units_1st_sem_enrolled'] - df_upload.get('Curricular_units_1st_sem_approved', 0))
-            if 'Curricular_units_2nd_sem_evaluations' not in df_upload.columns and 'Curricular_units_2nd_sem_enrolled' in df_upload.columns:
-                df_upload['Curricular_units_2nd_sem_evaluations'] = df_upload['Curricular_units_2nd_sem_enrolled'] + (df_upload['Curricular_units_2nd_sem_enrolled'] - df_upload.get('Curricular_units_2nd_sem_approved', 0))
+            # 1. VALIDASI KESESUAIAN BERKAS DENGAN FORMAT ANALISIS
+            batch_errors = []
+            if df_upload.empty:
+                batch_errors.append("Berkas CSV yang diunggah kosong (tidak memiliki baris data).")
 
-            if st.button("Jalankan Analisis Massal", icon=":material/rocket_launch:", type="primary"):
-                with st.spinner("Model AI sedang memproses seluruh data angkatan..."):
-                    expected_cols = getattr(scaler, "feature_names_in_", getattr(model, "feature_names_in_", None))
-                    
-                    df_proc = df_upload.copy()
-                    if expected_cols is not None:
-                        for col in expected_cols:
-                            if col not in df_proc.columns:
-                                df_proc[col] = 0
-                        df_features_batch = df_proc[expected_cols]
-                    else:
-                        df_features_batch = df_proc
+            # Daftar fitur kunci minimal yang wajib ada untuk inferensi
+            required_features = [
+                'Curricular_units_1st_sem_enrolled',
+                'Curricular_units_1st_sem_approved',
+                'Curricular_units_1st_sem_grade',
+                'Curricular_units_2nd_sem_enrolled',
+                'Curricular_units_2nd_sem_approved',
+                'Curricular_units_2nd_sem_grade',
+                'Tuition_fees_up_to_date'
+            ]
+            
+            missing_features = [col for col in required_features if col not in df_upload.columns]
+            if missing_features:
+                batch_errors.append(f"Berkas tidak memuat kolom parameter analisis wajib: `{', '.join(missing_features)}`.")
 
-                    processed_batch = scaler.transform(df_features_batch) if scaler is not None else df_features_batch
-                    predictions = model.predict(processed_batch)
-                    probabilities = model.predict_proba(processed_batch) if hasattr(model, "predict_proba") else None
+            if batch_errors:
+                show_batch_file_error_modal(batch_errors)
+            else:
+                st.success(f"Berkas valid dan siap diproses: terdeteksi **{len(df_upload)} baris data mahasiswa**.")
+                
+                # Otomatisasi kolom evaluasi jika tidak tersedia pada berkas
+                if 'Curricular_units_1st_sem_evaluations' not in df_upload.columns:
+                    df_upload['Curricular_units_1st_sem_evaluations'] = df_upload['Curricular_units_1st_sem_enrolled'] + (df_upload['Curricular_units_1st_sem_enrolled'] - df_upload.get('Curricular_units_1st_sem_approved', 0))
+                if 'Curricular_units_2nd_sem_evaluations' not in df_upload.columns:
+                    df_upload['Curricular_units_2nd_sem_evaluations'] = df_upload['Curricular_units_2nd_sem_enrolled'] + (df_upload['Curricular_units_2nd_sem_enrolled'] - df_upload.get('Curricular_units_2nd_sem_approved', 0))
 
-                    df_upload['Prediksi_Status'] = [decode_label(p) for p in predictions]
-                    if probabilities is not None:
-                        df_upload['Risiko_Dropout_Persen'] = [round(float(p[1]) * 100, 2) for p in probabilities]
+                if st.button("Jalankan Analisis Massal", icon=":material/rocket_launch:", type="primary"):
+                    with st.spinner("Model AI sedang memproses seluruh data angkatan..."):
+                        expected_cols = getattr(scaler, "feature_names_in_", getattr(model, "feature_names_in_", None))
+                        
+                        df_proc = df_upload.copy()
+                        if expected_cols is not None:
+                            for col in expected_cols:
+                                if col not in df_proc.columns:
+                                    df_proc[col] = 0
+                            df_features_batch = df_proc[expected_cols]
+                        else:
+                            df_features_batch = df_proc
 
-                    # KPI METRICS
-                    total_mhs = len(df_upload)
-                    total_dropout = (df_upload['Prediksi_Status'] == 'Dropout').sum()
-                    pct_dropout = (total_dropout / total_mhs) * 100
+                        processed_batch = scaler.transform(df_features_batch) if scaler is not None else df_features_batch
+                        predictions = model.predict(processed_batch)
+                        probabilities = model.predict_proba(processed_batch) if hasattr(model, "predict_proba") else None
 
-                    st.divider()
-                    k1, k2, k3 = st.columns(3)
-                    k1.metric("Total Mahasiswa Dipindai", total_mhs)
-                    k2.metric("Terindikasi Rawan Dropout", total_dropout)
-                    k3.metric("Rasio Mahasiswa Kritis", f"{pct_dropout:.1f}%")
+                        # Simpan hasil inferensi ke dataframe asli
+                        df_upload['Prediksi_Status'] = [decode_label(p) for p in predictions]
+                        if probabilities is not None:
+                            df_upload['Risiko_Dropout_Persen'] = [round(float(p[1]) * 100, 2) for p in probabilities]
 
-                    # TABEL PRIORITAS INTERVENSI
-                    st.markdown("##### <i class='fa-solid fa-triangle-exclamation' style='color:#DC2626;'></i> Daftar Mahasiswa Prioritas Intervensi (Risiko > 60%)", unsafe_allow_html=True)
-                    high_risk_df = df_upload[df_upload.get('Risiko_Dropout_Persen', 0) >= 60.0]
-                    
-                    priority_cols = [c for c in ['NIM', 'Nama_Mahasiswa', 'Kelas', 'Prediksi_Status', 'Risiko_Dropout_Persen'] if c in high_risk_df.columns]
-                    other_cols = [c for c in high_risk_df.columns if c not in priority_cols]
-                    ordered_display_df = high_risk_df[priority_cols + other_cols]
+                        # 2. KPI RINGKASAN EKSEKUTIF
+                        total_mhs = len(df_upload)
+                        total_dropout = (df_upload['Prediksi_Status'] == 'Dropout').sum()
+                        total_graduate = total_mhs - total_dropout
+                        pct_dropout = (total_dropout / total_mhs) * 100
 
-                    st.dataframe(ordered_display_df, use_container_width=True)
+                        st.divider()
+                        k1, k2, k3 = st.columns(3)
+                        k1.metric("Total Mahasiswa Dipindai", f"{total_mhs:,}".replace(",", "."))
+                        k2.metric("Terindikasi Rawan Dropout", f"{total_dropout:,}".replace(",", "."))
+                        k3.metric("Rasio Mahasiswa Kritis", f"{pct_dropout:.1f}%")
 
-                    # EXPORT BUTTON
-                    csv_export = df_upload.to_csv(index=False).encode('utf-8')
-                    st.download_button(
-                        label="Unduh Laporan Skrining (.csv)",
-                        icon=":material/download:",
-                        data=csv_export,
-                        file_name="laporan_skrining_risiko_mahasiswa.csv",
-                        mime="text/csv"
-                    )
+                        # 3. ACTION PLAN REKOMENDASI UNTUK KAMPUS
+                        st.markdown("### <i class='fa-solid fa-bullhorn' style='color:#2563EB;'></i> Rekomendasi Rencana Aksi Kampus (Institutional Action Plan)", unsafe_allow_html=True)
+                        st.caption("Langkah strategis terpadu berdasarkan agregasi profil risiko angkatan mahasiswa:")
+                        
+                        act_c1, act_c2, act_c3 = st.columns(3)
+                        with act_c1:
+                            with st.container(border=True):
+                                st.markdown("##### <i class='fa-solid fa-circle-exclamation' style='color:#DC2626;'></i> Prioritas 1: Kritis (> 60%)", unsafe_allow_html=True)
+                                st.markdown("""
+                                * **Konseling Terpadu:** Agendakan pemanggilan langsung bersama Dosen Pembimbing Akademik (DPA).
+                                * **Audit Finansial:** Fasilitasi skema cicilan SPP atau beasiswa darurat untuk mahasiswa berstatus menunggak.
+                                * **Proteksi Registrasi:** Kunci opsi pengunduran diri sepihak sebelum sesi mediasi selesai.
+                                """)
+                        with act_c2:
+                            with st.container(border=True):
+                                st.markdown("##### <i class='fa-solid fa-triangle-exclamation' style='color:#F59E0B;'></i> Prioritas 2: Waspada (40% - 60%)", unsafe_allow_html=True)
+                                st.markdown("""
+                                * **Kelas Remedial & Asistensi:** Wajibkan keikutsertaan dalam kelompok belajar sebaya (*peer tutoring*).
+                                * **Restrukturisasi SKS:** Batasi pengambilan beban SKS di semester berikutnya maksimal 18–20 SKS.
+                                * **Monitoring Berkala:** Jadwalkan pelaporan kemajuan belajar bulanan ke prodi.
+                                """)
+                        with act_c3:
+                            with st.container(border=True):
+                                st.markdown("##### <i class='fa-solid fa-circle-check' style='color:#10B981;'></i> Prioritas 3: Stabil (< 40%)", unsafe_allow_html=True)
+                                st.markdown("""
+                                * **Akselerasi Prestasi:** Dorong keterlibatan dalam program MBKM, magang industri, dan riset dosen.
+                                * **Peluang Beasiswa Prestasi:** Rekomendasikan untuk skema pendanaan prestasi atau asisten laboratorium.
+                                * **Pemantauan Mandiri:** Evaluasi rutin mandiri melalui portal akademik kampus.
+                                """)
+
+                        # 4. DEKODE NILAI BINER & PENYESUAIAN NAMA KOLOM AGAR MUDAH DIPAHAMI USER
+                        st.divider()
+                        st.markdown("##### <i class='fa-solid fa-table-list' style='color:#2563EB;'></i> Hasil Pemindaian & Daftar Prioritas Penanganan", unsafe_allow_html=True)
+                        
+                        # Buat salinan representatif untuk tampilan
+                        df_display = df_upload.copy()
+                        
+                        # Dekode nilai biner menjadi teks bahasa Indonesia yang jelas
+                        if 'Tuition_fees_up_to_date' in df_display.columns:
+                            df_display['Tuition_fees_up_to_date'] = df_display['Tuition_fees_up_to_date'].map({1: 'Lunas', 0: 'Menunggak'}).fillna(df_display['Tuition_fees_up_to_date'])
+                        if 'Debtor' in df_display.columns:
+                            df_display['Debtor'] = df_display['Debtor'].map({1: 'Ada Utang', 0: 'Bebas Utang'}).fillna(df_display['Debtor'])
+                        if 'Scholarship_holder' in df_display.columns:
+                            df_display['Scholarship_holder'] = df_display['Scholarship_holder'].map({1: 'Penerima', 0: 'Bukan Penerima'}).fillna(df_display['Scholarship_holder'])
+                        if 'Gender' in df_display.columns:
+                            df_display['Gender'] = df_display['Gender'].map({1: 'Laki-laki', 0: 'Perempuan'}).fillna(df_display['Gender'])
+
+                        # Kamus penyesuaian nama kolom tanpa underscore
+                        rename_dict = {
+                            'NIM': 'NIM',
+                            'Nama_Mahasiswa': 'Nama Mahasiswa',
+                            'Kelas': 'Kelas',
+                            'Prediksi_Status': 'Status Prediksi',
+                            'Risiko_Dropout_Persen': 'Tingkat Risiko (%)',
+                            'Admission_grade': 'Nilai Seleksi Masuk',
+                            'Age_at_enrollment': 'Usia Masuk',
+                            'Gender': 'Jenis Kelamin',
+                            'Tuition_fees_up_to_date': 'Status SPP',
+                            'Debtor': 'Beban Utang',
+                            'Scholarship_holder': 'Status Beasiswa',
+                            'Curricular_units_1st_sem_enrolled': 'SKS Diambil Sem 1',
+                            'Curricular_units_1st_sem_approved': 'SKS Lulus Sem 1',
+                            'Curricular_units_1st_sem_grade': 'Rata-rata Nilai Sem 1',
+                            'Curricular_units_2nd_sem_enrolled': 'SKS Diambil Sem 2',
+                            'Curricular_units_2nd_sem_approved': 'SKS Lulus Sem 2',
+                            'Curricular_units_2nd_sem_grade': 'Rata-rata Nilai Sem 2'
+                        }
+                        
+                        df_display = df_display.rename(columns=rename_dict)
+                        
+                        # Filter opsi tampilan tabel
+                        filter_tab1, filter_tab2 = st.tabs(["Prioritas Intervensi (Risiko > 60%)", "Seluruh Data Angkatan"])
+                        
+                        with filter_tab1:
+                            if 'Tingkat Risiko (%)' in df_display.columns:
+                                df_high_risk = df_display[df_display['Tingkat Risiko (%)'] >= 60.0]
+                            else:
+                                df_high_risk = df_display[df_display['Status Prediksi'] == 'Dropout']
+                            
+                            st.caption(f"Menampilkan **{len(df_high_risk)} mahasiswa** yang memerlukan tindakan mitigasi darurat.")
+                            st.dataframe(df_high_risk, use_container_width=True)
+                            
+                        with filter_tab2:
+                            st.caption(f"Menampilkan total rekapitulasi **{len(df_display)} mahasiswa**.")
+                            st.dataframe(df_display, use_container_width=True)
+
+                        # EXPORT BUTTON
+                        csv_export = df_upload.to_csv(index=False).encode('utf-8')
+                        st.download_button(
+                            label="Unduh Rekapitulasi Lengkap (.csv)",
+                            icon=":material/download:",
+                            data=csv_export,
+                            file_name="laporan_skrining_risiko_mahasiswa.csv",
+                            mime="text/csv"
+                        )
 
         except Exception as err:
-            st.error(f"Gagal memproses berkas CSV: {err}")
+            show_batch_file_error_modal([f"Terjadi kesalahan teknis saat membaca berkas: {err}"])
